@@ -1,26 +1,339 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   BUSALA DASHBOARD DESIGN TOKENS
+   ============================================ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base Radius */
+  --radius: 1rem;
+
+  /* Busala Brand Colors */
+  --busala-gold: #F5A623;
+  --busala-gold-light: #FFD07A;
+  --busala-gold-dark: #D4920E;
+
+  /* LIGHT MODE COLORS */
+  /* Background Colors */
+  --busala-bg-primary: #F8F9FA;
+  --busala-bg-secondary: #FFFFFF;
+  --busala-bg-card: #FFFFFF;
+  --busala-bg-nav: #FFFFFF;
+  --busala-bg-logo: #F8F9FA;
+
+  /* Gradient Backgrounds */
+  --busala-gradient-radial-start: #FFFFFF;
+  --busala-gradient-radial-end: #F8F9FA;
+
+  /* Border Colors */
+  --busala-border-subtle: rgba(0, 0, 0, 0.06);
+  --busala-border-glass: rgba(0, 0, 0, 0.08);
+  --busala-border-divider: rgba(0, 0, 0, 0.1);
+
+  /* Text Colors */
+  --busala-text-primary: #1A1D24;
+  --busala-text-secondary: rgba(0, 0, 0, 0.8);
+  --busala-text-muted: rgba(0, 0, 0, 0.6);
+  --busala-text-subtle: rgba(0, 0, 0, 0.4);
+
+  /* Hover/Interactive States */
+  --busala-hover-bg: rgba(0, 0, 0, 0.04);
+  --busala-active-bg: rgba(245, 166, 35, 0.1);
+
+  /* Shadows */
+  --busala-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --busala-shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --busala-shadow-button: 0 4px 12px rgba(245, 166, 35, 0.3);
+
+  /* Glass Effect */
+  --busala-glass-bg: rgba(255, 255, 255, 0.95);
+  --busala-glass-blur: 12px;
+
+  /* Spacing (based on 8px grid) */
+  --busala-spacing-xs: 8px;
+  --busala-spacing-sm: 12px;
+  --busala-spacing-md: 16px;
+  --busala-spacing-lg: 24px;
+  --busala-spacing-xl: 32px;
+
+  /* Layout Dimensions */
+  --busala-topnav-height: 72px;
+  --busala-sidebar-width: 240px;
+  --busala-content-margin: 32px;
+  --busala-gutter: 24px;
+
+  /* Component Sizes */
+  --busala-row-height: 56px;
+  --busala-sidebar-item-height: 44px;
+  --busala-button-height: 38px;
+  --busala-avatar-sm: 32px;
+  --busala-avatar-md: 48px;
+
+  /* Standard shadcn tokens mapped to light theme */
+  --background: #F8F9FA;
+  --foreground: #1A1D24;
+  --card: #FFFFFF;
+  --card-foreground: #1A1D24;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1D24;
+  --primary: #F5A623;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #1A1D24;
+  --muted: #F3F4F6;
+  --muted-foreground: rgba(0, 0, 0, 0.6);
+  --accent: rgba(245, 166, 35, 0.1);
+  --accent-foreground: #F5A623;
+  --destructive: #EF4444;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: #F5A623;
+  --chart-1: #F5A623;
+  --chart-2: #3B82F6;
+  --chart-3: #10B981;
+  --chart-4: #8B5CF6;
+  --chart-5: #EC4899;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A1D24;
+  --sidebar-primary: #F5A623;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(245, 166, 35, 0.1);
+  --sidebar-accent-foreground: #F5A623;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-ring: #F5A623;
 }
 
+/* DARK MODE COLORS */
+.dark {
+  /* Background Colors */
+  --busala-bg-primary: #0B0D10;
+  --busala-bg-secondary: #0E1014;
+  --busala-bg-card: #14171C;
+  --busala-bg-nav: #101319;
+  --busala-bg-logo: #14171C;
+
+  /* Gradient Backgrounds */
+  --busala-gradient-radial-start: #11151C;
+  --busala-gradient-radial-end: #050608;
+
+  /* Border Colors */
+  --busala-border-subtle: rgba(255, 255, 255, 0.04);
+  --busala-border-glass: rgba(255, 255, 255, 0.05);
+  --busala-border-divider: rgba(255, 255, 255, 0.08);
+
+  /* Text Colors */
+  --busala-text-primary: #FFFFFF;
+  --busala-text-secondary: rgba(255, 255, 255, 0.8);
+  --busala-text-muted: rgba(255, 255, 255, 0.6);
+  --busala-text-subtle: rgba(255, 255, 255, 0.4);
+
+  /* Hover/Interactive States */
+  --busala-hover-bg: rgba(255, 255, 255, 0.02);
+  --busala-active-bg: rgba(245, 166, 35, 0.1);
+
+  /* Shadows */
+  --busala-shadow-card: 0 20px 40px rgba(0, 0, 0, 0.4);
+  --busala-shadow-card-hover: 0 24px 48px rgba(0, 0, 0, 0.5);
+  --busala-shadow-button: 0 4px 12px rgba(245, 166, 35, 0.3);
+
+  /* Glass Effect */
+  --busala-glass-bg: rgba(20, 23, 28, 0.85);
+  --busala-glass-blur: 12px;
+
+  /* Standard shadcn tokens mapped to dark theme */
+  --background: #0B0D10;
+  --foreground: #FFFFFF;
+  --card: #14171C;
+  --card-foreground: #FFFFFF;
+  --popover: #14171C;
+  --popover-foreground: #FFFFFF;
+  --primary: #F5A623;
+  --primary-foreground: #0B0D10;
+  --secondary: #1A1D24;
+  --secondary-foreground: #FFFFFF;
+  --muted: #1A1D24;
+  --muted-foreground: rgba(255, 255, 255, 0.6);
+  --accent: rgba(245, 166, 35, 0.1);
+  --accent-foreground: #F5A623;
+  --destructive: #EF4444;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #F5A623;
+  --chart-1: #F5A623;
+  --chart-2: #3B82F6;
+  --chart-3: #10B981;
+  --chart-4: #8B5CF6;
+  --chart-5: #EC4899;
+  --sidebar: #0E1014;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #F5A623;
+  --sidebar-primary-foreground: #0B0D10;
+  --sidebar-accent: rgba(245, 166, 35, 0.1);
+  --sidebar-accent-foreground: #F5A623;
+  --sidebar-border: rgba(255, 255, 255, 0.04);
+  --sidebar-ring: #F5A623;
+}
+
+/* Tailwind v4 theme inline config */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Busala Brand Colors */
+  --color-busala-gold: var(--busala-gold);
+  --color-busala-gold-light: var(--busala-gold-light);
+  --color-busala-gold-dark: var(--busala-gold-dark);
+
+  /* Busala Background Colors */
+  --color-busala-bg-primary: var(--busala-bg-primary);
+  --color-busala-bg-secondary: var(--busala-bg-secondary);
+  --color-busala-bg-card: var(--busala-bg-card);
+  --color-busala-bg-nav: var(--busala-bg-nav);
+
+  /* Text Colors */
+  --color-busala-text-primary: var(--busala-text-primary);
+  --color-busala-text-secondary: var(--busala-text-secondary);
+  --color-busala-text-muted: var(--busala-text-muted);
+  --color-busala-text-subtle: var(--busala-text-subtle);
+
+  /* Standard shadcn colors */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Radius tokens */
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-busala-bg-primary text-foreground antialiased;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================
+   CUSTOM UTILITY CLASSES
+   ============================================ */
+
+@layer utilities {
+  /* Busala Card Glass Effect */
+  .busala-card {
+    background: var(--busala-glass-bg);
+    backdrop-filter: blur(var(--busala-glass-blur));
+    border: 1px solid var(--busala-border-glass);
+    border-radius: 16px;
+    box-shadow: var(--busala-shadow-card);
+  }
+
+  .busala-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .busala-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--busala-shadow-card-hover);
+  }
+
+  /* Gold Gradient */
+  .busala-gradient-gold {
+    background: linear-gradient(135deg, var(--busala-gold) 0%, var(--busala-gold-dark) 100%);
+  }
+
+  /* Active Nav Item Gradient */
+  .busala-nav-active {
+    background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(245, 166, 35, 0.05) 100%);
+    border: 1px solid rgba(245, 166, 35, 0.2);
+  }
+
+  /* Background Gradient */
+  .busala-bg-gradient {
+    background: radial-gradient(ellipse at top, var(--busala-gradient-radial-start) 0%, var(--busala-gradient-radial-end) 100%);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar for content areas - Light mode */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Custom scrollbar for content areas - Dark mode */
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }

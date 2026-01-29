@@ -1,0 +1,251 @@
+// Busala School Management System - Prisma Schema
+// PostgreSQL Database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      UserRole
+  orgId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  admin
+  manager
+  teacher
+  staff
+}
+
+// ============================================
+// TEACHER MODEL
+// ============================================
+model Teacher {
+  id                      String             @id @default(uuid())
+  fullName                String
+  email                   String
+  phone                   String?
+  subjects                String[]
+  status                  TeacherStatus
+  weeklyAvailability      Json               @default("[]") // AvailabilitySlot[]
+  availabilityExceptions  Json               @default("[]") // AvailabilityException[]
+  hoursThisWeek           Float              @default(0)
+  maxHours                Float              @default(25)
+  orgId                   String
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  // Relations
+  groups                  Group[]
+  lessons                 Lesson[]
+
+  @@unique([email, orgId])
+  @@index([orgId])
+  @@index([status])
+  @@index([email])
+  @@map("teachers")
+}
+
+enum TeacherStatus {
+  active
+  inactive
+}
+
+// ============================================
+// STUDENT MODEL
+// ============================================
+model Student {
+  id                String        @id @default(uuid())
+  fullName          String
+  email             String
+  phone             String?
+  status            StudentStatus
+  groupIds          String[]
+  attendancePercent Float         @default(0)
+  balance           Float         @default(0)
+  plan              String        @default("Monthly Basic")
+  enrolledDate      DateTime      @default(now())
+  orgId             String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  lessons           Lesson[]      @relation("StudentLessons")
+
+  @@unique([email, orgId])
+  @@index([orgId])
+  @@index([status])
+  @@index([email])
+  @@map("students")
+}
+
+enum StudentStatus {
+  active
+  at_risk
+  inactive
+}
+
+// ============================================
+// ROOM MODEL
+// ============================================
+model Room {
+  id        String     @id @default(uuid())
+  name      String
+  capacity  Int
+  status    RoomStatus
+  floor     String?
+  equipment String[]
+  orgId     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  groups    Group[]
+  lessons   Lesson[]
+
+  @@unique([name, orgId])
+  @@index([orgId])
+  @@index([status])
+  @@map("rooms")
+}
+
+enum RoomStatus {
+  available
+  occupied
+  maintenance
+}
+
+// ============================================
+// GROUP MODEL
+// ============================================
+model Group {
+  id           String   @id @default(uuid())
+  name         String
+  teacherId    String
+  roomId       String?
+  studentIds   String[]
+  scheduleRule Json?    // ScheduleRule object
+  color        String?
+  orgId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  teacher      Teacher  @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  room         Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  lessons      Lesson[]
+
+  @@unique([name, orgId])
+  @@index([orgId])
+  @@index([teacherId])
+  @@index([roomId])
+  @@map("groups")
+}
+
+// ============================================
+// LESSON MODEL
+// ============================================
+model Lesson {
+  id        String       @id @default(uuid())
+  title     String
+  startAt   DateTime
+  endAt     DateTime
+  type      LessonType
+  groupId   String?
+  studentId String?
+  teacherId String
+  roomId    String?
+  status    LessonStatus
+  orgId     String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  teacher   Teacher      @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  room      Room?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  group     Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student   Student?     @relation("StudentLessons", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([teacherId])
+  @@index([roomId])
+  @@index([groupId])
+  @@index([studentId])
+  @@index([status])
+  @@index([startAt])
+  @@index([endAt])
+  @@map("lessons")
+}
+
+enum LessonType {
+  group
+  one_on_one
+}
+
+enum LessonStatus {
+  upcoming
+  in_progress
+  completed
+  cancelled
+}
+
+// ============================================
+// APPROVAL MODEL
+// ============================================
+model Approval {
+  id            String         @id @default(uuid())
+  type          ApprovalType
+  title         String
+  description   String
+  payload       Json           @default("{}")
+  status        ApprovalStatus
+  priority      Priority
+  requesterId   String
+  requesterName String
+  reviewerId    String?
+  reviewerNote  String?
+  orgId         String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([orgId])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([requesterId])
+  @@map("approvals")
+}
+
+enum ApprovalType {
+  teacher_change
+  student_request
+  room_change
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum Priority {
+  low
+  medium
+  high
+}

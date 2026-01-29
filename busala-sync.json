@@ -1,0 +1,805 @@
+{
+  "version": "0.5",
+  "lastUpdated": "2026-01-28",
+  "status": "BACKEND_MIGRATED_TO_POSTGRESQL",
+  "decisions": {
+    "apiBasePath": "/api",
+    "auth": "header-based-dev (x-user-role, x-user-id, x-org-id)",
+    "defaultAuth": {
+      "role": "admin",
+      "userId": "user_default",
+      "orgId": "org_busala_default"
+    },
+    "roleModel": [
+      "admin",
+      "manager",
+      "teacher",
+      "staff"
+    ],
+    "roleHierarchy": "admin > manager > teacher > staff",
+    "timezone": "Asia/Jerusalem",
+    "idFormat": "uuid (v4)",
+    "timestampFormat": "ISO 8601 (e.g., 2026-01-27T10:30:00.000Z)",
+    "pagination": "page-based (page, limit params)",
+    "database": "PostgreSQL with Prisma ORM"
+  },
+  "entities": {
+    "Teacher": {
+      "fields": {
+        "id": "uuid",
+        "fullName": "string (2-100 chars)",
+        "email": "string (email format)",
+        "phone": "string?",
+        "subjects": "string[] (min 1)",
+        "status": "active | inactive",
+        "weeklyAvailability": "AvailabilitySlot[]",
+        "availabilityExceptions": "AvailabilityException[]",
+        "hoursThisWeek": "number",
+        "maxHours": "number (1-60, default 25)",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      },
+      "enriched": {
+        "lessonsToday": "number (added on GET responses)"
+      }
+    },
+    "Student": {
+      "fields": {
+        "id": "uuid",
+        "fullName": "string (2-100 chars)",
+        "email": "string (email format)",
+        "phone": "string?",
+        "status": "active | at-risk | inactive",
+        "groupIds": "string[]",
+        "attendancePercent": "number (0-100)",
+        "balance": "number",
+        "plan": "string",
+        "enrolledDate": "ISODateTime",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      }
+    },
+    "Room": {
+      "fields": {
+        "id": "uuid",
+        "name": "string (1-100 chars)",
+        "capacity": "number (1-500)",
+        "status": "available | occupied | maintenance",
+        "floor": "string?",
+        "equipment": "string[]",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      }
+    },
+    "Group": {
+      "fields": {
+        "id": "uuid",
+        "name": "string (2-100 chars)",
+        "teacherId": "uuid (ref Teacher)",
+        "roomId": "uuid? (ref Room)",
+        "studentIds": "string[]",
+        "scheduleRule": "ScheduleRule?",
+        "color": "string? (hex color)",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      },
+      "enriched": {
+        "teacherName": "string (on list)",
+        "roomName": "string? (on list)",
+        "studentsCount": "number (on list and detail)",
+        "teacher": "Teacher (on detail)",
+        "room": "Room? (on detail)",
+        "students": "Student[] (on detail)"
+      }
+    },
+    "Lesson": {
+      "fields": {
+        "id": "uuid",
+        "title": "string (2-200 chars)",
+        "startAt": "ISODateTime",
+        "endAt": "ISODateTime",
+        "type": "group | one_on_one",
+        "groupId": "uuid? (required if type=group)",
+        "studentId": "uuid? (required if type=one_on_one)",
+        "teacherId": "uuid (ref Teacher)",
+        "roomId": "uuid? (ref Room)",
+        "status": "upcoming | in_progress | completed | cancelled",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      },
+      "enriched": {
+        "teacherName": "string (on list)",
+        "roomName": "string? (on list)",
+        "groupName": "string? (on list)",
+        "studentName": "string? (on list)",
+        "teacher": "Teacher (on detail)",
+        "room": "Room? (on detail)",
+        "group": "Group? (on detail)",
+        "student": "Student? (on detail)",
+        "students": "Student[]? (on detail, if group lesson)"
+      }
+    },
+    "Approval": {
+      "fields": {
+        "id": "uuid",
+        "type": "teacher_change | student_request | room_change",
+        "title": "string (2-200 chars)",
+        "description": "string (2-1000 chars)",
+        "payload": "Record<string, unknown>",
+        "status": "pending | approved | rejected",
+        "priority": "low | medium | high",
+        "requesterId": "uuid",
+        "requesterName": "string",
+        "reviewerId": "uuid?",
+        "reviewerNote": "string? (max 500 chars)",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      }
+    },
+    "User": {
+      "fields": {
+        "id": "uuid",
+        "email": "string",
+        "name": "string",
+        "role": "admin | manager | teacher | staff",
+        "orgId": "string",
+        "createdAt": "ISODateTime",
+        "updatedAt": "ISODateTime"
+      }
+    },
+    "AvailabilitySlot": {
+      "fields": {
+        "dayOfWeek": "number (0-6, 0=Sunday)",
+        "startTime": "string (HH:mm)",
+        "endTime": "string (HH:mm)"
+      }
+    },
+    "AvailabilityException": {
+      "fields": {
+        "id": "uuid",
+        "type": "unavailable | available",
+        "startDate": "string (YYYY-MM-DD)",
+        "endDate": "string (YYYY-MM-DD)",
+        "reason": "string? (max 500 chars)",
+        "allDay": "boolean",
+        "startTime": "string? (HH:mm, required if !allDay)",
+        "endTime": "string? (HH:mm, required if !allDay)"
+      }
+    },
+    "ScheduleRule": {
+      "fields": {
+        "daysOfWeek": "number[] (0-6)",
+        "startTime": "string (HH:mm)",
+        "endTime": "string (HH:mm)",
+        "roomId": "uuid?"
+      }
+    },
+    "ScheduleConflict": {
+      "fields": {
+        "id": "uuid",
+        "type": "teacher | room",
+        "description": "string",
+        "lessonIds": "string[]",
+        "severity": "low | medium | high"
+      }
+    }
+  },
+  "api": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/teachers",
+        "description": "List teachers with pagination and filtering",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/teachers/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number (default 1)",
+          "limit": "number (default 20, max 100)",
+          "status": "active | inactive | all",
+          "search": "string (searches fullName, email, subjects)"
+        },
+        "response": {
+          "data": "Teacher[] (with lessonsToday)",
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number",
+            "totalPages": "number",
+            "hasMore": "boolean"
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/teachers/:id",
+        "description": "Get single teacher by ID",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/teachers/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Teacher (with lessonsToday)"
+      },
+      {
+        "method": "POST",
+        "path": "/api/teachers",
+        "description": "Create new teacher",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/teachers/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "fullName": "string (required)",
+          "email": "string (required)",
+          "phone": "string?",
+          "subjects": "string[] (required, min 1)",
+          "status": "active | inactive (default active)",
+          "weeklyAvailability": "AvailabilitySlot[]",
+          "maxHours": "number (default 25)"
+        },
+        "response": "Teacher (201)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/teachers/:id",
+        "description": "Update teacher",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/teachers/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "body": "Partial<CreateTeacher>",
+        "response": "Teacher"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/teachers/:id",
+        "description": "Archive teacher (sets status to inactive)",
+        "minRole": "admin",
+        "implemented": true,
+        "file": "/src/app/api/teachers/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "{ success: true, teacher: Teacher }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/students",
+        "description": "List students with pagination and filtering",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/students/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number",
+          "limit": "number",
+          "status": "active | at-risk | inactive | all",
+          "groupId": "uuid",
+          "search": "string"
+        },
+        "response": "PaginatedResponse<Student>"
+      },
+      {
+        "method": "GET",
+        "path": "/api/students/:id",
+        "description": "Get single student by ID",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/students/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Student"
+      },
+      {
+        "method": "POST",
+        "path": "/api/students",
+        "description": "Create new student",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/students/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "fullName": "string (required)",
+          "email": "string (required)",
+          "phone": "string?",
+          "status": "active | at-risk | inactive (default active)",
+          "groupIds": "string[]",
+          "balance": "number (default 0)",
+          "plan": "string (default 'Monthly Basic')"
+        },
+        "response": "Student (201)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/students/:id",
+        "description": "Update student",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/students/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Student"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/students/:id",
+        "description": "Archive student (sets status to inactive)",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/students/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "{ success: true, student: Student }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/rooms",
+        "description": "List rooms with pagination and filtering",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/rooms/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number",
+          "limit": "number",
+          "status": "available | occupied | maintenance | all",
+          "floor": "string",
+          "search": "string"
+        },
+        "response": "PaginatedResponse<Room>"
+      },
+      {
+        "method": "GET",
+        "path": "/api/rooms/:id",
+        "description": "Get single room by ID",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/rooms/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Room"
+      },
+      {
+        "method": "POST",
+        "path": "/api/rooms",
+        "description": "Create new room",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/rooms/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "name": "string (required)",
+          "capacity": "number (required)",
+          "status": "available | occupied | maintenance (default available)",
+          "floor": "string?",
+          "equipment": "string[]"
+        },
+        "response": "Room (201)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/rooms/:id",
+        "description": "Update room",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/rooms/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Room"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/rooms/:id",
+        "description": "Set room to maintenance",
+        "minRole": "admin",
+        "implemented": true,
+        "file": "/src/app/api/rooms/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "{ success: true, room: Room }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/groups",
+        "description": "List groups with pagination, enriched with teacherName and roomName",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/groups/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number",
+          "limit": "number",
+          "teacherId": "uuid",
+          "search": "string"
+        },
+        "response": "PaginatedResponse<Group & { teacherName, roomName, studentsCount }>"
+      },
+      {
+        "method": "GET",
+        "path": "/api/groups/:id",
+        "description": "Get group with teacher, room, and students data",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/groups/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Group & { teacher, room, students, studentsCount }"
+      },
+      {
+        "method": "POST",
+        "path": "/api/groups",
+        "description": "Create new group",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/groups/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "name": "string (required)",
+          "teacherId": "uuid (required)",
+          "roomId": "uuid?",
+          "studentIds": "string[]",
+          "scheduleRule": "ScheduleRule?",
+          "color": "string?"
+        },
+        "response": "Group (201)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/groups/:id",
+        "description": "Update group (also updates student groupIds)",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/groups/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Group"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/groups/:id",
+        "description": "Assign students to group",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/groups/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "body": "{ studentIds: string[] }",
+        "response": "Group"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/groups/:id",
+        "description": "Delete group (removes group from students)",
+        "minRole": "admin",
+        "implemented": true,
+        "file": "/src/app/api/groups/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "{ success: true, deletedId: string }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/lessons",
+        "description": "List lessons with filtering and enriched data",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/lessons/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number",
+          "limit": "number",
+          "startDate": "ISODateTime",
+          "endDate": "ISODateTime",
+          "teacherId": "uuid",
+          "roomId": "uuid",
+          "groupId": "uuid",
+          "status": "upcoming | in_progress | completed | cancelled"
+        },
+        "response": "PaginatedResponse<Lesson & { teacherName, roomName, groupName, studentName }>"
+      },
+      {
+        "method": "GET",
+        "path": "/api/lessons/:id",
+        "description": "Get lesson with full related data",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/lessons/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Lesson & { teacher, room, group, student, students }"
+      },
+      {
+        "method": "POST",
+        "path": "/api/lessons",
+        "description": "Create lesson with conflict checking",
+        "minRole": "teacher",
+        "implemented": true,
+        "file": "/src/app/api/lessons/route.ts",
+        "usesDatabase": "Prisma",
+        "headers": {
+          "x-force-create": "boolean (override conflicts)"
+        },
+        "body": {
+          "title": "string (required)",
+          "startAt": "ISODateTime (required)",
+          "endAt": "ISODateTime (required)",
+          "type": "group | one_on_one (required)",
+          "groupId": "uuid (required if type=group)",
+          "studentId": "uuid (required if type=one_on_one)",
+          "teacherId": "uuid (required)",
+          "roomId": "uuid?",
+          "status": "upcoming | in_progress | completed | cancelled (default upcoming)"
+        },
+        "response": "Lesson (201) | ConflictResponse (409)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/lessons/:id",
+        "description": "Update lesson with conflict checking",
+        "minRole": "teacher",
+        "implemented": true,
+        "file": "/src/app/api/lessons/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "headers": {
+          "x-force-update": "boolean (override conflicts)"
+        },
+        "response": "Lesson | ConflictResponse (409)"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/lessons/:id",
+        "description": "Cancel lesson (sets status to cancelled)",
+        "minRole": "teacher",
+        "implemented": true,
+        "file": "/src/app/api/lessons/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "{ success: true, lesson: Lesson }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/approvals",
+        "description": "List approvals with counts by type and status",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/approvals/route.ts",
+        "usesDatabase": "Prisma",
+        "query": {
+          "page": "number",
+          "limit": "number",
+          "type": "teacher_change | student_request | room_change | all",
+          "status": "pending | approved | rejected | all",
+          "priority": "low | medium | high | all"
+        },
+        "response": "PaginatedResponse<Approval> & { counts: { total, pending, approved, rejected, byType } }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/approvals/:id",
+        "description": "Get single approval by ID",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/approvals/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "response": "Approval"
+      },
+      {
+        "method": "POST",
+        "path": "/api/approvals",
+        "description": "Create new approval request",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/approvals/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "type": "teacher_change | student_request | room_change (required)",
+          "title": "string (required)",
+          "description": "string (required)",
+          "payload": "object",
+          "priority": "low | medium | high (default medium)",
+          "requesterId": "uuid (required)",
+          "requesterName": "string (required)"
+        },
+        "response": "Approval (201)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/approvals/:id",
+        "description": "Approve or reject an approval",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/approvals/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "body": {
+          "action": "approve | reject (required)",
+          "reviewerId": "uuid?",
+          "reviewerNote": "string?"
+        },
+        "response": "Approval"
+      },
+      {
+        "method": "POST",
+        "path": "/api/approvals/:id",
+        "description": "Quick approve endpoint",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/approvals/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "body": "{ reviewerNote?: string }",
+        "response": "Approval"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/approvals/:id",
+        "description": "Quick reject endpoint",
+        "minRole": "manager",
+        "implemented": true,
+        "file": "/src/app/api/approvals/[id]/route.ts",
+        "usesDatabase": "Prisma",
+        "body": "{ reviewerNote?: string }",
+        "response": "{ success: true, approval: Approval }"
+      },
+      {
+        "method": "GET",
+        "path": "/api/scheduling",
+        "description": "Get scheduling overview with conflict detection",
+        "minRole": "staff",
+        "implemented": true,
+        "file": "/src/app/api/scheduling/route.ts",
+        "usesDatabase": "In-memory (requires Prisma migration)",
+        "query": {
+          "startDate": "ISODateTime?",
+          "endDate": "ISODateTime?"
+        },
+        "response": "{ lessonsCount, conflicts: ScheduleConflict[], conflictsCount }"
+      },
+      {
+        "method": "POST",
+        "path": "/api/scheduling",
+        "description": "Scheduling actions: check-conflicts, preview-generation, generate-lessons",
+        "minRole": "staff (check/preview) | manager (generate)",
+        "implemented": true,
+        "file": "/src/app/api/scheduling/route.ts",
+        "usesDatabase": "In-memory (requires Prisma migration)",
+        "body": {
+          "action": "check-conflicts | preview-generation | generate-lessons",
+          "teacherId": "uuid? (for check-conflicts)",
+          "roomId": "uuid? (for check-conflicts)",
+          "startAt": "ISODateTime (for check-conflicts)",
+          "endAt": "ISODateTime (for check-conflicts)",
+          "excludeLessonId": "uuid? (for check-conflicts)",
+          "groupId": "uuid (for generation)",
+          "startDate": "YYYY-MM-DD (for generation)",
+          "endDate": "YYYY-MM-DD (for generation)",
+          "skipConflicting": "boolean (for generate-lessons)"
+        },
+        "response": "Varies by action"
+      }
+    ],
+    "errors": {
+      "shape": {
+        "error": {
+          "code": "string",
+          "message": "string",
+          "details": "any?"
+        }
+      },
+      "codes": [
+        "VALIDATION_ERROR",
+        "UNAUTHORIZED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "DUPLICATE_EMAIL",
+        "DUPLICATE_NAME",
+        "INVALID_TEACHER",
+        "INVALID_ROOM",
+        "INVALID_GROUP",
+        "INVALID_STUDENT",
+        "OUTSIDE_AVAILABILITY",
+        "INVALID_INPUT",
+        "INVALID_ACTION",
+        "ROOM_UNAVAILABLE",
+        "ALREADY_PROCESSED",
+        "NO_SCHEDULE_RULE",
+        "GENERATION_FAILED",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "conflictResponse": {
+      "status": 409,
+      "body": {
+        "success": false,
+        "conflicts": {
+          "teacher": "{ id, title, startAt, endAt }[]",
+          "room": "{ id, title, startAt, endAt }[]",
+          "availability": "string[]? (reasons for availability violations)"
+        },
+        "message": "string"
+      }
+    }
+  },
+  "seedData": {
+    "users": 2,
+    "teachers": 5,
+    "students": 20,
+    "rooms": 6,
+    "groups": 6,
+    "lessons": "19-30 (generated from groups for next 7 days + 2 one_on_one)",
+    "approvals": 8,
+    "seedIds": {
+      "teachers": [
+        "teacher_001",
+        "teacher_002",
+        "teacher_003",
+        "teacher_004",
+        "teacher_005"
+      ],
+      "rooms": [
+        "room_001",
+        "room_002",
+        "room_003",
+        "room_004",
+        "room_005",
+        "room_006"
+      ],
+      "groups": [
+        "group_001",
+        "group_002",
+        "group_003",
+        "group_004",
+        "group_005",
+        "group_006"
+      ],
+      "students": "student_001 to student_020",
+      "approvals": "approval_001 to approval_008"
+    }
+  },
+  "files": {
+    "apiRoutes": [
+      "/src/app/api/teachers/route.ts",
+      "/src/app/api/teachers/[id]/route.ts",
+      "/src/app/api/students/route.ts",
+      "/src/app/api/students/[id]/route.ts",
+      "/src/app/api/rooms/route.ts",
+      "/src/app/api/rooms/[id]/route.ts",
+      "/src/app/api/groups/route.ts",
+      "/src/app/api/groups/[id]/route.ts",
+      "/src/app/api/lessons/route.ts",
+      "/src/app/api/lessons/[id]/route.ts",
+      "/src/app/api/approvals/route.ts",
+      "/src/app/api/approvals/[id]/route.ts",
+      "/src/app/api/scheduling/route.ts"
+    ],
+    "database": [
+      "/prisma/schema.prisma",
+      "/src/lib/db/prisma.ts",
+      "/src/lib/db/types.ts",
+      "/src/lib/db/seed-prisma.ts",
+      "/src/lib/db/index.ts"
+    ],
+    "utilities": [
+      "/src/lib/api-utils.ts",
+      "/src/lib/validators/schemas.ts",
+      "/src/lib/scheduling/conflicts.ts"
+    ]
+  },
+  "notes": {
+    "frontend": [
+      "API uses PostgreSQL via Prisma - data persists across server restarts",
+      "Use x-user-role header to test different roles (default: admin)",
+      "Use x-user-id header to set user ID (default: user_default)",
+      "Use x-org-id header to set org ID (default: org_busala_default)",
+      "Conflict detection returns 409 with conflicts array",
+      "Set x-force-create or x-force-update header to override conflicts",
+      "Approvals endpoint includes counts for tabs UI",
+      "Teachers list includes enriched lessonsToday count",
+      "Groups and lessons lists include enriched related entity names"
+    ],
+    "backend": [
+      "COMPLETED: PostgreSQL database with Prisma ORM",
+      "COMPLETED: All CRUD endpoints for teachers, students, rooms, groups migrated to Prisma",
+      "COMPLETED: Approval endpoints migrated to Prisma",
+      "COMPLETED: Conflict detection module migrated to async Prisma queries",
+      "COMPLETED: Seed script using Prisma for deterministic test data",
+      "COMPLETED: Pagination, filtering, and role-based access control",
+      "COMPLETED: Zod validation for all request bodies",
+      "COMPLETED: Database schema with proper relations and indexes",
+      "COMPLETED: Lessons endpoints migrated to Prisma with conflict detection",
+      "PENDING: Scheduling routes need Prisma migration (1 file)",
+      "NOTE: Authentication remains header-based for development"
+    ]
+  }
+}
