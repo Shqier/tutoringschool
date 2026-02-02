@@ -29,7 +29,7 @@ import {
   ConfirmDialog,
 } from '@/components/app';
 import { AddLessonDialog } from '@/components/lessons/AddLessonDialog';
-import { useLessons, useTeachers, useGroups, useRooms, useDeleteLesson } from '@/lib/api/hooks';
+import { useLessons, useTeachers, useGroups, useRooms, useStudents, useDeleteLesson } from '@/lib/api/hooks';
 import type { Lesson } from '@/lib/api/types';
 
 // Helper to format time from ISO string
@@ -113,6 +113,7 @@ export default function LessonsPage() {
   const { data: teachersData } = useTeachers();
   const { data: groupsData } = useGroups();
   const { data: roomsData } = useRooms();
+  const { data: studentsData } = useStudents();
 
   const { mutate: deleteLesson, isLoading: deleteLoading } = useDeleteLesson();
 
@@ -120,6 +121,7 @@ export default function LessonsPage() {
   const teachers = teachersData?.teachers || [];
   const groups = groupsData?.groups || [];
   const rooms = roomsData?.rooms || [];
+  const students = studentsData?.students || [];
 
   // Create lookup maps for displaying names
   const teacherMap = useMemo(() => {
@@ -492,6 +494,7 @@ export default function LessonsPage() {
         teachers={teachers}
         groups={groups}
         rooms={rooms}
+        students={students}
       />
 
       {/* Delete Confirmation Dialog */}

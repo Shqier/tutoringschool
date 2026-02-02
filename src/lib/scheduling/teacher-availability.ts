@@ -140,9 +140,18 @@ export async function checkTeacherAvailability(
 
   // Not in weekly schedule and no override exception
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const dayName = dayNames[lessonStart.getUTCDay()];
+  const lessonDay = lessonStart.getUTCDay();
+  const dayName = dayNames[lessonDay];
+  // Find slots for this day to show available window in the message
+  const slotsThatDay = weeklyAvailability.filter((s) => s.dayOfWeek === lessonDay);
+  const windowText =
+    slotsThatDay.length > 0
+      ? slotsThatDay
+          .map((s) => `${s.startTime}–${s.endTime}`)
+          .join(', ')
+      : 'not scheduled';
   return {
     isAvailable: false,
-    reason: `Teacher not available on ${dayName} at this time`
+    reason: `Teacher not available on ${dayName} at this time (available: ${windowText})`
   };
 }

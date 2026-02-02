@@ -64,19 +64,11 @@ export const createLessonSchema = z.object({
   studentId: z.string().optional(),
   roomId: z.string().optional(),
 }).refine(
-  (data) => {
-    if (data.type === 'group' && !data.groupId) {
-      return false;
-    }
-    if (data.type === 'one_on_one' && !data.studentId) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'Group is required for group lessons, student is required for 1-on-1 lessons',
-    path: ['groupId'],
-  }
+  (data) => data.type !== 'group' || !!data.groupId,
+  { message: 'Group is required for group lessons', path: ['groupId'] }
+).refine(
+  (data) => data.type !== 'one_on_one' || !!data.studentId,
+  { message: 'Student is required for one-on-one lessons', path: ['studentId'] }
 ).refine(
   (data) => {
     const start = new Date(data.startAt);

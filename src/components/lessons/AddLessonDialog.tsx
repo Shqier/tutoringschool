@@ -26,7 +26,7 @@ import {
 import { createLessonSchema, type CreateLessonFormData } from '@/lib/validations';
 import { useCreateLesson } from '@/lib/api/hooks';
 import { ApiConflictError } from '@/lib/api/client';
-import type { Teacher, Group, Room, ConflictingLesson } from '@/lib/api/types';
+import type { Teacher, Group, Room, Student, ConflictingLesson } from '@/lib/api/types';
 
 interface AddLessonDialogProps {
   open: boolean;
@@ -35,6 +35,7 @@ interface AddLessonDialogProps {
   teachers: Teacher[];
   groups: Group[];
   rooms: Room[];
+  students: Student[];
 }
 
 function formatTime(isoString: string): string {
@@ -142,6 +143,7 @@ export function AddLessonDialog({
   teachers,
   groups,
   rooms,
+  students,
 }: AddLessonDialogProps) {
   const { mutate: createLesson, isLoading } = useCreateLesson();
   const [conflicts, setConflicts] = useState<{ teacher?: ConflictingLesson[]; room?: ConflictingLesson[]; availability?: string[] } | null>(null);
@@ -163,6 +165,7 @@ export function AddLessonDialog({
       endAt: '',
       teacherId: '',
       groupId: '',
+      studentId: '',
       roomId: '',
     },
   });
@@ -178,10 +181,13 @@ export function AddLessonDialog({
 
   const submitLesson = async (data: CreateLessonFormData, forceCreate = false) => {
     try {
+      // datetime-local gives "YYYY-MM-DDTHH:mm" — convert to full ISO for API
+      const startAtISO = new Date(data.startAt).toISOString();
+      const endAtISO = new Date(data.endAt).toISOString();
       await createLesson({
         title: data.title,
-        startAt: data.startAt,
-        endAt: data.endAt,
+        startAt: startAtISO,
+        endAt: endAtISO,
         type: data.type,
         teacherId: data.teacherId,
         groupId: data.type === 'group' ? data.groupId : undefined,
@@ -191,7 +197,7 @@ export function AddLessonDialog({
       });
       toast.success('Lesson created successfully');
       handleClose();
-      onSuccess();
+      await onSuccess?.();
     } catch (error) {
       if (error instanceof ApiConflictError) {
         // Show conflict warning
@@ -363,6 +369,40 @@ export function AddLessonDialog({
               />
               {errors.groupId && (
                 <p className="text-xs text-red-400">{errors.groupId.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* Student (for one-on-one lessons) */}
+          {lessonType === 'one_on_one' && (
+            <div className="space-y-2">
+              <Label>Student</Label>
+              <Controller
+                name="studentId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[#F5A623]/50">
+                      <SelectValue placeholder="Select student" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#14171C] border-white/10">
+                      {students
+                        .filter((s) => s.status === 'active')
+                        .map((student) => (
+                          <SelectItem
+                            key={student.id}
+                            value={student.id}
+                            className="text-white/80 focus:bg-white/5 focus:text-white"
+                          >
+                            {student.fullName}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.studentId && (
+                <p className="text-xs text-red-400">{errors.studentId.message}</p>
               )}
             </div>
           )}

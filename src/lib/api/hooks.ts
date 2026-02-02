@@ -55,12 +55,13 @@ function useQuery<T>(
     setIsLoading(true);
     setError(null);
 
-    fetchFn(controller.signal)
+    const promise = fetchFn(controller.signal)
       .then((result) => {
         if (mountedRef.current) {
           setData(result);
           setIsLoading(false);
         }
+        return result;
       })
       .catch((err) => {
         if (mountedRef.current && err.name !== 'AbortError') {
@@ -74,24 +75,25 @@ function useQuery<T>(
           );
           setIsLoading(false);
         }
+        throw err;
       });
 
-    return () => {
-      controller.abort();
-    };
+    const cancel = () => controller.abort();
+    return { promise, cancel };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   useEffect(() => {
     mountedRef.current = true;
-    const cleanup = fetch();
+    const { cancel } = fetch();
     return () => {
       mountedRef.current = false;
-      cleanup();
+      cancel();
     };
   }, [fetch]);
 
-  return { data, isLoading, error, refetch: fetch };
+  const refetch = useCallback(() => fetch().promise, [fetch]);
+  return { data, isLoading, error, refetch };
 }
 
 // ============================================
