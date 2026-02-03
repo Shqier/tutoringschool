@@ -77,7 +77,7 @@ export interface Student {
   fullName: string;
   email?: string;
   phone?: string;
-  status: 'active' | 'at-risk' | 'inactive';
+  status: 'active' | 'at_risk' | 'inactive';
   groupIds: string[];
   attendancePercent?: number;
   balance?: number;
@@ -103,7 +103,7 @@ export interface Room {
 }
 
 export interface ScheduleRule {
-  daysOfWeek: number[]; // 0-6
+  daysOfWeek: number[]; // 0-6, 0=Sunday
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   roomId?: string;
@@ -113,16 +113,12 @@ export interface Group {
   id: string;
   name: string;
   teacherId: string;
-  teacherName?: string; // Populated field
+  teacherName?: string; // populated
   roomId?: string;
-  roomName?: string; // Populated field
-  studentIds: string[];
-  studentsCount?: number;
-  scheduleRule?: ScheduleRule;
-  schedule?: string; // Human readable schedule
-  progress?: number;
-  nextLesson?: string;
+  roomName?: string; // populated
+  studentCount?: number;
   color?: string;
+  scheduleRule?: ScheduleRule;
   orgId: string;
   createdAt: string;
   updatedAt: string;
@@ -131,47 +127,21 @@ export interface Group {
 export interface Lesson {
   id: string;
   title: string;
-  startAt: string; // ISO DateTime
-  endAt: string; // ISO DateTime
   type: 'group' | 'one_on_one';
-  groupId?: string;
-  groupName?: string; // Populated
-  studentId?: string;
-  studentName?: string; // Populated
-  teacherId: string;
-  teacherName?: string; // Populated
-  roomId?: string;
-  roomName?: string; // Populated
+  startAt: string; // ISO 8601
+  endAt: string; // ISO 8601
   status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
+  teacherId: string;
+  teacherName?: string; // populated
+  groupId?: string;
+  groupName?: string; // populated
+  studentId?: string;
+  studentName?: string; // populated
+  roomId?: string;
+  roomName?: string; // populated
   orgId: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Approval {
-  id: string;
-  type: 'teacher_change' | 'student_request' | 'room_change';
-  title: string;
-  description: string;
-  requesterId: string;
-  requesterName: string;
-  requesterAvatar?: string;
-  payload: Record<string, unknown>;
-  status: 'pending' | 'approved' | 'rejected';
-  priority: 'low' | 'medium' | 'high';
-  reviewerId?: string;
-  reviewerNote?: string;
-  createdAt: string;
-  updatedAt: string;
-  orgId: string;
-}
-
-export interface ScheduleConflict {
-  id: string;
-  type: 'teacher' | 'room';
-  description: string;
-  lessonIds: string[];
-  severity: 'low' | 'medium' | 'high';
 }
 
 export interface ConflictingLesson {
@@ -179,22 +149,35 @@ export interface ConflictingLesson {
   title: string;
   startAt: string;
   endAt: string;
+  teacherId?: string;
+  roomId?: string;
+  type: 'teacher' | 'room' | 'availability';
 }
 
-export interface ScheduleSlot {
+export interface Approval {
   id: string;
-  day: string;
-  startTime: string;
-  endTime: string;
-  lessonTitle: string;
-  teacher: string;
-  room: string;
-  group: string;
-  color?: string;
+  type: 'teacher_change' | 'student_request' | 'room_change';
+  status: 'pending' | 'approved' | 'rejected';
+  priority: 'low' | 'medium' | 'high';
+  requestedBy: string;
+  requestedByName?: string; // populated
+  reviewedBy?: string;
+  reviewedByName?: string; // populated
+  requestedAt: string;
+  reviewedAt?: string;
+  reason?: string;
+  reviewerNote?: string;
+  relatedEntity: {
+    type: 'teacher' | 'student' | 'room' | 'lesson' | 'group';
+    id: string;
+    name?: string;
+  };
+  details?: Record<string, unknown>;
+  orgId: string;
 }
 
 // ============================================
-// REQUEST/RESPONSE TYPES
+// QUERY & INPUT TYPES
 // ============================================
 
 // Lessons
@@ -302,6 +285,18 @@ export interface StudentsQuery {
 
 export interface StudentsResponse extends PaginatedResponse<Student> {}
 
+export interface CreateStudentInput {
+  fullName: string;
+  email: string;
+  phone?: string;
+  status?: 'active' | 'at_risk' | 'inactive';
+  groupIds?: string[];
+  balance?: number;
+  plan?: string;
+}
+
+export type UpdateStudentInput = Partial<CreateStudentInput>;
+
 // Rooms
 export interface RoomsQuery {
   page?: number;
@@ -347,8 +342,6 @@ export interface ApprovalsResponse extends PaginatedResponse<Approval> {
 }
 
 export interface ApprovalActionInput {
-  action: 'approve' | 'reject';
-  reviewerId?: string;
   reviewerNote?: string;
 }
 
@@ -356,40 +349,23 @@ export interface ApprovalActionInput {
 export interface SchedulingQuery {
   startDate?: string;
   endDate?: string;
+  teacherId?: string;
+  roomId?: string;
+  groupId?: string;
 }
 
 export interface SchedulingResponse {
-  lessonsCount: number;
-  conflicts: ScheduleConflict[];
-  conflictsCount: number;
-}
-
-// Schedule (weekly view)
-export interface ScheduleQuery {
-  weekStart: string; // ISO date
-}
-
-export interface ScheduleResponse {
-  slots: ScheduleSlot[];
-  conflicts: ScheduleConflict[];
-}
-
-// Dashboard stats
-export interface DashboardStatsResponse {
-  teachersCount: number;
-  studentsCount: number;
-  activeGroups: number;
-  roomsInUse: string;
-  pendingApprovals: number;
-}
-
-// Auth
-export interface MeResponse {
-  user: User;
-}
-
-// Success response
-export interface SuccessResponse {
-  success: boolean;
-  [key: string]: unknown;
+  lessons: Lesson[];
+  teachers: {
+    id: string;
+    name: string;
+    hoursScheduled: number;
+    maxHours: number;
+    availability: AvailabilitySlot[];
+  }[];
+  rooms: {
+    id: string;
+    name: string;
+    utilizationPercent: number;
+  }[];
 }

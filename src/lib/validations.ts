@@ -21,6 +21,28 @@ export const phoneSchema = z
   .or(z.literal(''));
 
 // ============================================
+// STUDENT SCHEMAS
+// ============================================
+
+export const createStudentSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters'),
+  email: emailSchema,
+  phone: phoneSchema,
+  status: z.enum(['active', 'at_risk', 'inactive']).default('active'),
+  groupIds: z.array(z.string()).default([]),
+  balance: z.number().default(0),
+  plan: z.string().default('Monthly Basic'),
+});
+
+export const updateStudentSchema = createStudentSchema.partial();
+
+export type CreateStudentFormData = z.infer<typeof createStudentSchema>;
+export type UpdateStudentFormData = z.infer<typeof updateStudentSchema>;
+
+// ============================================
 // TEACHER SCHEMAS
 // ============================================
 

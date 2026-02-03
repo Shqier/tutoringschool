@@ -20,6 +20,7 @@ import type {
   GroupDetailResponse,
   StudentsQuery,
   StudentsResponse,
+  Student,
   RoomsQuery,
   RoomsResponse,
   ApprovalsQuery,
@@ -28,6 +29,8 @@ import type {
   SchedulingResponse,
   CreateLessonInput,
   UpdateLessonInput,
+  CreateStudentInput,
+  UpdateStudentInput,
 } from './types';
 
 // ============================================
@@ -349,6 +352,31 @@ export function useStudents(query?: StudentsQuery) {
     : null;
 
   return { ...result, data: normalizedData };
+}
+
+export function useStudent(id: string | null) {
+  return useQuery<Student>(
+    (signal) => {
+      if (!id) return Promise.reject(new Error('No ID provided'));
+      return api.getStudent(id, signal);
+    },
+    [id]
+  );
+}
+
+export function useCreateStudent() {
+  return useMutation(api.createStudent);
+}
+
+export function useUpdateStudent() {
+  return useMutation(
+    (params: { id: string; input: UpdateStudentInput }, signal: AbortSignal) =>
+      api.updateStudent(params.id, params.input, signal)
+  );
+}
+
+export function useDeleteStudent() {
+  return useMutation((id: string, signal: AbortSignal) => api.deleteStudent(id, signal));
 }
 
 // Rooms

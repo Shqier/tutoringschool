@@ -145,6 +145,9 @@ import type {
   AssignStudentsInput,
   StudentsQuery,
   StudentsResponse,
+  Student,
+  CreateStudentInput,
+  UpdateStudentInput,
   RoomsQuery,
   RoomsResponse,
   Room,
@@ -366,6 +369,46 @@ export async function getStudents(
 ): Promise<StudentsResponse> {
   const qs = query ? buildQueryString(query as QueryParams) : '';
   return request<StudentsResponse>(`/students${qs}`, { signal });
+}
+
+export async function getStudent(
+  id: string,
+  signal?: AbortSignal
+): Promise<Student> {
+  return request<Student>(`/students/${id}`, { signal });
+}
+
+export async function createStudent(
+  input: CreateStudentInput,
+  signal?: AbortSignal
+): Promise<Student> {
+  return request<Student>('/students', {
+    method: 'POST',
+    body: input,
+    signal,
+  });
+}
+
+export async function updateStudent(
+  id: string,
+  input: UpdateStudentInput,
+  signal?: AbortSignal
+): Promise<Student> {
+  return request<Student>(`/students/${id}`, {
+    method: 'PATCH',
+    body: input,
+    signal,
+  });
+}
+
+export async function deleteStudent(
+  id: string,
+  signal?: AbortSignal
+): Promise<SuccessResponse> {
+  return request<SuccessResponse>(`/students/${id}`, {
+    method: 'DELETE',
+    signal,
+  });
 }
 
 // ============================================
