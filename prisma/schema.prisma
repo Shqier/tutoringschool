@@ -34,7 +34,7 @@ enum UserRole {
 }
 
 // ============================================
-// TEACHER MODEL
+// TEACHER MODEL (with JSON-based availability)
 // ============================================
 model Teacher {
   id                      String             @id @default(uuid())
@@ -43,8 +43,8 @@ model Teacher {
   phone                   String?
   subjects                String[]
   status                  TeacherStatus
-  weeklyAvailability      Json               @default("[]") // AvailabilitySlot[]
-  availabilityExceptions  Json               @default("[]") // AvailabilityException[]
+  weeklyAvailability      Json               @default("[]") // WeeklyAvailability[] - Array of {dayOfWeek, startTime, endTime}
+  availabilityExceptions  Json               @default("[]") // AvailabilityException[] - Array of {startDate, endDate, isAllDay, type, reason}
   hoursThisWeek           Float              @default(0)
   maxHours                Float              @default(25)
   orgId                   String
@@ -59,6 +59,7 @@ model Teacher {
   @@index([orgId])
   @@index([status])
   @@index([email])
+  @@index([orgId, id]) // Composite for availability queries
   @@map("teachers")
 }
 
@@ -190,6 +191,7 @@ model Lesson {
   @@index([status])
   @@index([startAt])
   @@index([endAt])
+  @@index([orgId, teacherId])
   @@map("lessons")
 }
 
