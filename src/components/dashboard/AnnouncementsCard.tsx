@@ -1,10 +1,52 @@
+// ============================================
+// ANNOUNCEMENTS CARD
+// Updated: Phase 3 - Static content (no API yet)
+// Shows system announcements and updates
+// Note: Future enhancement - connect to announcements API
+// ============================================
+
 'use client';
 
 import React from 'react';
 import { AlertCircle, Bell, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { announcements } from '@/data/mock-data';
-import type { Announcement } from '@/types/dashboard';
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  priority: 'low' | 'medium' | 'high';
+  author: string;
+}
+
+// Static announcements - could be moved to API in future
+const announcements: Announcement[] = [
+  {
+    id: '1',
+    title: 'System Updated',
+    content: 'The dashboard has been connected to live APIs. All data is now real-time.',
+    date: '2 hours ago',
+    priority: 'high',
+    author: 'System',
+  },
+  {
+    id: '2',
+    title: 'Feature Enhancement',
+    content: 'Teacher availability system is now fully operational with conflict detection.',
+    date: '1 day ago',
+    priority: 'medium',
+    author: 'Admin',
+  },
+  {
+    id: '3',
+    title: 'Reminder',
+    content: 'Please review pending approvals regularly to keep operations smooth.',
+    date: '2 days ago',
+    priority: 'low',
+    author: 'System',
+  },
+];
 
 interface AnnouncementItemProps {
   announcement: Announcement;

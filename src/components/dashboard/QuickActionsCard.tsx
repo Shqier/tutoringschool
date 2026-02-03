@@ -1,3 +1,9 @@
+// ============================================
+// QUICK ACTIONS CARD
+// Updated: Phase 3 - No API dependency (static content)
+// Provides quick access to common actions
+// ============================================
+
 'use client';
 
 import React from 'react';
@@ -8,8 +14,6 @@ import {
   CalendarPlus,
   BarChart3,
 } from 'lucide-react';
-import { quickActions } from '@/data/mock-data';
-import type { QuickAction } from '@/types/dashboard';
 
 const iconMap: Record<string, React.ElementType> = {
   UserPlus,
@@ -17,6 +21,46 @@ const iconMap: Record<string, React.ElementType> = {
   CalendarPlus,
   BarChart3,
 };
+
+interface QuickAction {
+  id: string;
+  label: string;
+  icon: string;
+  href: string;
+  description?: string;
+}
+
+// Static quick actions - no API needed
+const quickActions: QuickAction[] = [
+  {
+    id: '1',
+    label: 'Add Student',
+    icon: 'UserPlus',
+    href: '/students/new',
+    description: 'Register a new student',
+  },
+  {
+    id: '2',
+    label: 'Create Group',
+    icon: 'Users',
+    href: '/groups/new',
+    description: 'Create a new class group',
+  },
+  {
+    id: '3',
+    label: 'Schedule Lesson',
+    icon: 'CalendarPlus',
+    href: '/lessons/new',
+    description: 'Add a new lesson',
+  },
+  {
+    id: '4',
+    label: 'View Reports',
+    icon: 'BarChart3',
+    href: '/reports',
+    description: 'Analytics & reports',
+  },
+];
 
 interface QuickActionButtonProps {
   action: QuickAction;
