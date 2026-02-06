@@ -43,8 +43,13 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
   const [isDark, setIsDark] = React.useState(true);
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [addLessonOpen, setAddLessonOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -144,19 +149,20 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
           {/* Notification Bell with Dropdown */}
-          <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-busala-gold rounded-full" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
+          {mounted ? (
+            <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-busala-gold rounded-full" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
               className="w-80 bg-card border-border text-card-foreground"
@@ -190,7 +196,19 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
                 View all notifications
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-busala-gold rounded-full" />
+              )}
+            </Button>
+          )}
 
           {/* Add Lesson Button */}
           <Button
@@ -205,18 +223,19 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
           </Button>
 
           {/* User Avatar with Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 hover:bg-busala-hover-bg rounded-lg px-2 py-1 transition-colors">
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={userAvatar} alt={userName} />
-                  <AvatarFallback className="bg-muted text-foreground text-sm">
-                    {userName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <ChevronDown className="h-4 w-4 text-busala-text-muted" />
-              </button>
-            </DropdownMenuTrigger>
+          {mounted ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 hover:bg-busala-hover-bg rounded-lg px-2 py-1 transition-colors">
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src={userAvatar} alt={userName} />
+                    <AvatarFallback className="bg-muted text-foreground text-sm">
+                      {userName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="h-4 w-4 text-busala-text-muted" />
+                </button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
               className="w-56 bg-card border-border text-card-foreground"
@@ -251,7 +270,18 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          ) : (
+            <button className="flex items-center gap-2 hover:bg-busala-hover-bg rounded-lg px-2 py-1 transition-colors">
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarImage src={userAvatar} alt={userName} />
+                <AvatarFallback className="bg-muted text-foreground text-sm">
+                  {userName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <ChevronDown className="h-4 w-4 text-busala-text-muted" />
+            </button>
+          )}
 
           {/* Theme Toggle */}
           <Button
