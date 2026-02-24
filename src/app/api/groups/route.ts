@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = url.searchParams.get('search')?.toLowerCase();
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: Record<string, unknown> = { orgId: user.orgId };
 
     if (teacherIdFilter) {
       where.teacherId = teacherIdFilter;
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Enrich with teacher and room names
     const enrichedGroups = groups.map(group => ({
       ...group,
-      scheduleRule: group.scheduleRule as any,
+      scheduleRule: group.scheduleRule as Record<string, unknown>,
       teacherName: group.teacher.fullName,
       roomName: group.room?.name || null,
       studentsCount: group.studentIds.length,
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         teacherId,
         roomId,
         studentIds,
-        scheduleRule: scheduleRule as any,
+        scheduleRule: scheduleRule as Record<string, unknown> | undefined,
         color,
         orgId: user.orgId,
       },

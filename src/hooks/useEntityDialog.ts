@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export type DialogMode = 'create' | 'view' | 'edit';
 
-export interface UseEntityDialogReturn<T = any> {
+export interface UseEntityDialogReturn<T = unknown> {
   isOpen: boolean;
   mode: DialogMode;
   entity: T | null;
@@ -18,7 +18,7 @@ export interface UseEntityDialogReturn<T = any> {
   close: () => void;
 }
 
-export function useEntityDialog<T = any>(): UseEntityDialogReturn<T> {
+export function useEntityDialog<T = unknown>(): UseEntityDialogReturn<T> {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<DialogMode>('view');
   const [entity, setEntity] = useState<T | null>(null);

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const priorityFilter = url.searchParams.get('priority');
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: Record<string, unknown> = { orgId: user.orgId };
 
     if (typeFilter && typeFilter !== 'all') {
       where.type = typeFilter;
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         type,
         title,
         description,
-        payload: payload as any,
+        payload: payload as Record<string, unknown>,
         status: 'pending',
         priority,
         requesterId,

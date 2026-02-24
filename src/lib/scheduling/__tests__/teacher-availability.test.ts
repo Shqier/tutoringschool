@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_ORG_ID = 'org_busala_default';
 
-async function createTestTeacher(weeklyAvailability: any[], exceptions: any[] = []) {
+async function createTestTeacher(weeklyAvailability: unknown[], exceptions: unknown[] = []) {
   const randomId = Math.random().toString(36).substring(7);
   return await prisma.teacher.create({
     data: {
@@ -14,8 +14,8 @@ async function createTestTeacher(weeklyAvailability: any[], exceptions: any[] = 
       email: `teacher_${randomId}_${Date.now()}@test.com`,
       subjects: ['Math'],
       status: 'active',
-      weeklyAvailability: weeklyAvailability as any,
-      availabilityExceptions: exceptions as any,
+      weeklyAvailability: weeklyAvailability as unknown as Record<string, unknown>[],
+      availabilityExceptions: exceptions as unknown as Record<string, unknown>[],
       hoursThisWeek: 0,
       maxHours: 25,
       orgId: DEFAULT_ORG_ID,

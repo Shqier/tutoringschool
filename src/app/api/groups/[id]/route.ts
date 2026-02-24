@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return jsonResponse({
       ...group,
-      scheduleRule: group.scheduleRule as any,
+      scheduleRule: group.scheduleRule as Record<string, unknown>,
       teacher: group.teacher,
       room: group.room,
       students,
@@ -159,7 +159,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         ...parsed.data,
-        scheduleRule: parsed.data.scheduleRule as any,
+        scheduleRule: parsed.data.scheduleRule as Record<string, unknown> | undefined,
       },
     });
 

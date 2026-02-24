@@ -190,7 +190,7 @@ export async function generateLessonsForGroup(
     return { lessons: [], conflicts: [] };
   }
 
-  const rule = scheduleRule as any;
+  const rule = scheduleRule as Record<string, unknown>;
   const startDate = new Date(startDateStr);
   const endDate = new Date(endDateStr);
   const lessons: Lesson[] = [];

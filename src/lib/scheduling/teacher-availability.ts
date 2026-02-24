@@ -108,8 +108,8 @@ export async function checkTeacherAvailability(
     return { isAvailable: false, reason: 'Teacher not found' };
   }
 
-  const weeklyAvailability = teacher.weeklyAvailability as any as AvailabilitySlot[];
-  const exceptions = (teacher.availabilityExceptions as any as AvailabilityException[]) || [];
+  const weeklyAvailability = teacher.weeklyAvailability as unknown as AvailabilitySlot[];
+  const exceptions = (teacher.availabilityExceptions as unknown as AvailabilityException[]) || [];
 
   // Step 1: Check for unavailable exceptions (they block time)
   for (const exception of exceptions) {

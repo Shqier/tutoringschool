@@ -28,7 +28,7 @@ export async function cleanDatabase(): Promise<void> {
 /**
  * Create a test teacher
  */
-export async function createTestTeacher(overrides: any = {}) {
+export async function createTestTeacher(overrides: Record<string, unknown> = {}) {
   const randomId = Math.random().toString(36).substring(7);
   return await prisma.teacher.create({
     data: {
@@ -57,7 +57,7 @@ export async function createTestTeacher(overrides: any = {}) {
 /**
  * Create a test room
  */
-export async function createTestRoom(overrides: any = {}) {
+export async function createTestRoom(overrides: Record<string, unknown> = {}) {
   const randomId = Math.random().toString(36).substring(7);
   return await prisma.room.create({
     data: {
@@ -74,7 +74,7 @@ export async function createTestRoom(overrides: any = {}) {
 /**
  * Create a test group
  */
-export async function createTestGroup(teacherId: string, overrides: any = {}) {
+export async function createTestGroup(teacherId: string, overrides: Record<string, unknown> = {}) {
   const randomId = Math.random().toString(36).substring(7);
   return await prisma.group.create({
     data: {
@@ -90,7 +90,7 @@ export async function createTestGroup(teacherId: string, overrides: any = {}) {
 /**
  * Create a test student
  */
-export async function createTestStudent(overrides: any = {}) {
+export async function createTestStudent(overrides: Record<string, unknown> = {}) {
   const randomId = Math.random().toString(36).substring(7);
   return await prisma.student.create({
     data: {
@@ -115,7 +115,7 @@ export async function createTestLesson(
   teacherId: string,
   startAt: Date,
   endAt: Date,
-  overrides: any = {}
+  overrides: Record<string, unknown> = {}
 ) {
   return await prisma.lesson.create({
     data: {
