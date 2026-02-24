@@ -34,7 +34,7 @@ import type { Student } from '@/lib/api/types';
 export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [groupFilter, setGroupFilter] = useState('all');
+  const [_groupFilter, _setGroupFilter] = useState('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
@@ -45,7 +45,7 @@ export default function StudentsPage() {
   const { data: studentsData, isLoading, error, refetch } = useStudents();
   const { mutate: deleteStudent, isLoading: deleteLoading } = useDeleteStudent();
 
-  const students = studentsData?.students || [];
+  const students = useMemo(() => studentsData?.students || [], [studentsData]);
 
   // Filter students
   const filteredStudents = useMemo(() => {
@@ -233,7 +233,7 @@ export default function StudentsPage() {
 
             {/* Status */}
             <div className="w-24">
-              <StatusBadge status={student.status === 'at_risk' ? 'at-risk' : student.status as any} />
+              <StatusBadge status={student.status === 'at_risk' ? 'at-risk' : student.status as string} />
             </div>
 
             {/* Actions */}

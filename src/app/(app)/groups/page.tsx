@@ -63,10 +63,10 @@ export default function GroupsPage() {
 
   const { mutate: deleteGroup, isLoading: deleteLoading } = useDeleteGroup();
 
-  const groups = groupsData?.groups || [];
-  const teachers = teachersData?.teachers || [];
-  const rooms = roomsData?.rooms || [];
-  const lessons = lessonsData?.lessons || [];
+  const groups = useMemo(() => groupsData?.groups || [], [groupsData]);
+  const teachers = useMemo(() => teachersData?.teachers || [], [teachersData]);
+  const rooms = useMemo(() => roomsData?.rooms || [], [roomsData]);
+  const lessons = useMemo(() => lessonsData?.lessons || [], [lessonsData]);
 
   // Create teacher lookup
   const teacherMap = useMemo(() => {

@@ -14,7 +14,7 @@ import {
   SkeletonCard,
 } from '@/components/app';
 import { useLessons, useScheduling } from '@/lib/api/hooks';
-import type { Lesson, ScheduleConflict } from '@/lib/api/types';
+import type { ScheduleConflict } from '@/lib/api/types';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
@@ -60,7 +60,7 @@ export default function SchedulingPage() {
     endDate: weekEnd.toISOString(),
   });
 
-  const lessons = lessonsData?.lessons || [];
+  const lessons = useMemo(() => lessonsData?.lessons || [], [lessonsData]);
   const conflicts = schedulingData?.conflicts || [];
 
   const formatDateRange = () => {

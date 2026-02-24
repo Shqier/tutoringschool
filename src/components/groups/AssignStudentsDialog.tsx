@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Loader2, Check, X, Users } from 'lucide-react';
+import { Search, Loader2, Check, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useStudents, useAssignStudents } from '@/lib/api/hooks';
-import type { Group, Student } from '@/lib/api/types';
+import type { Group } from '@/lib/api/types';
 
 interface AssignStudentsDialogProps {
   open: boolean;
@@ -36,8 +36,9 @@ export function AssignStudentsDialog({
   const { data: studentsData, isLoading: studentsLoading } = useStudents();
   const { mutate: assignStudents, isLoading: assigning } = useAssignStudents();
 
-  const students = studentsData?.students || [];
+  const students = useMemo(() => studentsData?.students || [], [studentsData]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   // Initialize selected IDs when dialog opens
   useEffect(() => {
     if (open && group) {
@@ -45,6 +46,7 @@ export function AssignStudentsDialog({
       setSearchQuery('');
     }
   }, [open, group]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Filter students by search
   const filteredStudents = useMemo(() => {

@@ -170,7 +170,7 @@ import type {
 // AUTH
 // ============================================
 
-export async function getMe(signal?: AbortSignal): Promise<MeResponse> {
+export async function getMe(_signal?: AbortSignal): Promise<MeResponse> {
   // For now, return a mock user since we don't have auth implemented
   // In production, this would call /api/auth/me
   return {
@@ -201,6 +201,7 @@ export async function getLessons(
     // Create start of day and end of day in ISO format
     const startDate = `${dateStr}T00:00:00.000Z`;
     const endDate = `${dateStr}T23:59:59.999Z`;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { date: _date, ...rest } = query;
     processedQuery = { ...rest, startDate, endDate };
   }
@@ -588,7 +589,7 @@ export async function getDashboardStats(
   signal?: AbortSignal
 ): Promise<DashboardStatsResponse> {
   // Aggregate stats from various endpoints
-  const [teachers, students, groups, rooms, approvals] = await Promise.all([
+  const [teachers, students, groups, _rooms, approvals] = await Promise.all([
     getTeachers({ limit: 1 }, signal),
     getStudents({ limit: 1 }, signal),
     getGroups({ limit: 1 }, signal),

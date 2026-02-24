@@ -39,7 +39,7 @@ function formatTime(isoString: string): string {
 }
 
 // Helper to format date for display
-function formatDate(isoString: string): string {
+function _formatDate(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -116,10 +116,10 @@ export default function LessonsPage() {
 
   const { mutate: deleteLesson, isLoading: deleteLoading } = useDeleteLesson();
 
-  const lessons = lessonsData?.lessons || [];
-  const teachers = teachersData?.teachers || [];
-  const groups = groupsData?.groups || [];
-  const rooms = roomsData?.rooms || [];
+  const lessons = useMemo(() => lessonsData?.lessons || [], [lessonsData]);
+  const teachers = useMemo(() => teachersData?.teachers || [], [teachersData]);
+  const groups = useMemo(() => groupsData?.groups || [], [groupsData]);
+  const rooms = useMemo(() => roomsData?.rooms || [], [roomsData]);
 
   // Create lookup maps for displaying names
   const teacherMap = useMemo(() => {

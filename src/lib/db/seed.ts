@@ -388,7 +388,7 @@ for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
   date.setDate(date.getDate() + dayOffset);
   const dayOfWeek = date.getDay();
 
-  seedGroups.forEach((group, groupIndex) => {
+  seedGroups.forEach((group, _groupIndex) => {
     if (group.scheduleRule?.daysOfWeek.includes(dayOfWeek)) {
       const [startHour, startMin] = group.scheduleRule.startTime.split(':').map(Number);
       const [endHour, endMin] = group.scheduleRule.endTime.split(':').map(Number);

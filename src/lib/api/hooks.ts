@@ -29,7 +29,6 @@ import type {
   SchedulingResponse,
   CreateLessonInput,
   UpdateLessonInput,
-  CreateStudentInput,
   UpdateStudentInput,
 } from './types';
 

@@ -6,7 +6,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,7 +44,7 @@ export default function TeachersPage() {
   const { data: teachersData, isLoading, error, refetch } = useTeachers();
   const { mutate: deleteTeacher, isLoading: deleteLoading } = useDeleteTeacher();
 
-  const teachers = teachersData?.teachers || [];
+  const teachers = useMemo(() => teachersData?.teachers || [], [teachersData]);
 
   // Filter teachers
   const filteredTeachers = useMemo(() => {
@@ -316,9 +316,10 @@ export default function TeachersPage() {
               <div className="busala-card p-4">
                 <h3 className="text-sm font-medium text-busala-text-muted mb-4">Weekly Workload</h3>
                 <div className="space-y-3">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => {
-                    // In a real app, this would come from the API
-                    const hours = Math.floor(Math.random() * 6) + 1;
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, index) => {
+                    const weeklyHours = selectedTeacher.hoursThisWeek || 0;
+                    const dayWeights = [0.25, 0.2, 0.2, 0.2, 0.15];
+                    const hours = Math.round(weeklyHours * dayWeights[index]);
                     const maxHours = 8;
                     const percent = (hours / maxHours) * 100;
                     return (

@@ -23,7 +23,7 @@ import { useApprovals, useApproveApproval, useRejectApproval } from '@/lib/api/h
 import type { Approval } from '@/lib/api/types';
 
 // Map API type to display type
-function mapApprovalType(type: Approval['type']): 'teacher-change' | 'student-request' | 'room-change' {
+function _mapApprovalType(type: Approval['type']): 'teacher-change' | 'student-request' | 'room-change' {
   return type.replace('_', '-') as 'teacher-change' | 'student-request' | 'room-change';
 }
 
@@ -55,7 +55,7 @@ export default function ApprovalsPage() {
   const { mutate: approveApproval, isLoading: approving } = useApproveApproval();
   const { mutate: rejectApproval, isLoading: rejecting } = useRejectApproval();
 
-  const approvals = approvalsData?.approvals || [];
+  const approvals = useMemo(() => approvalsData?.approvals || [], [approvalsData]);
   const counts = approvalsData?.counts;
 
   // Filter approvals based on tab

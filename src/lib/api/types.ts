@@ -193,7 +193,7 @@ export interface LessonsQuery {
   status?: string;
 }
 
-export interface LessonsResponse extends PaginatedResponse<Lesson> {}
+export type LessonsResponse = PaginatedResponse<Lesson>
 
 export interface CreateLessonInput {
   title: string;
@@ -228,7 +228,7 @@ export interface TeachersQuery {
   search?: string;
 }
 
-export interface TeachersResponse extends PaginatedResponse<Teacher> {}
+export type TeachersResponse = PaginatedResponse<Teacher>
 
 export interface CreateTeacherInput {
   fullName: string;
@@ -251,7 +251,7 @@ export interface GroupsQuery {
   search?: string;
 }
 
-export interface GroupsResponse extends PaginatedResponse<Group> {}
+export type GroupsResponse = PaginatedResponse<Group>
 
 export interface GroupDetailResponse extends Group {
   teacher?: Teacher;
@@ -283,7 +283,7 @@ export interface StudentsQuery {
   search?: string;
 }
 
-export interface StudentsResponse extends PaginatedResponse<Student> {}
+export type StudentsResponse = PaginatedResponse<Student>
 
 export interface CreateStudentInput {
   fullName: string;
@@ -306,7 +306,7 @@ export interface RoomsQuery {
   search?: string;
 }
 
-export interface RoomsResponse extends PaginatedResponse<Room> {}
+export type RoomsResponse = PaginatedResponse<Room>
 
 export interface CreateRoomInput {
   name: string;

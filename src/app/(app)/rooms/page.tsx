@@ -41,7 +41,7 @@ export default function RoomsPage() {
   const { data: roomsData, isLoading, error, refetch } = useRooms();
   const { mutate: deleteRoom, isLoading: deleteLoading } = useDeleteRoom();
 
-  const rooms = roomsData?.rooms || [];
+  const rooms = useMemo(() => roomsData?.rooms || [], [roomsData]);
 
   // Filter rooms
   const filteredRooms = useMemo(() => {

@@ -8,7 +8,7 @@ import type { Prisma } from '@prisma/client';
 
 export const DEFAULT_ORG_ID = 'org_busala_default';
 
-const now = new Date();
+const _now = new Date();
 
 // Helper to create ISO date strings
 function isoDate(daysFromNow: number, hour: number, minute: number = 0): Date {
