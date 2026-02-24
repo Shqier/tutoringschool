@@ -42,3 +42,18 @@
 ## Security & Configuration
 - Never commit secrets. Use `.env` (see `.env.example`).
 - Database: PostgreSQL via Prisma; apply migrations with `npx prisma migrate dev` (dev) or `deploy` (prod).
+
+## Cursor Cloud specific instructions
+
+### Services
+- **PostgreSQL 16** – Required. Runs locally on port 5432. Start with `sudo pg_ctlcluster 16 main start`. DB user `busala` / password `busala`, database `busala`.
+- **Next.js dev server** – `npm run dev` on `http://localhost:3000`. Uses header-based dev auth (`x-user-role`, `x-user-id`, `x-org-id`).
+
+### Gotchas
+- PostgreSQL may not be running after a VM restart. Always run `sudo pg_ctlcluster 16 main start` before any DB operation.
+- The `.env` file is not committed. It must contain `DATABASE_URL="postgresql://busala:busala@localhost:5432/busala"`.
+- `npm test` cleans the database. After running tests, re-seed with `npx prisma db seed` if you need sample data for the dev server.
+- The seed script is idempotent; it skips if data already exists. To force re-seed, truncate tables first.
+- Lint has pre-existing warnings/errors (57 errors, 46 warnings) in the existing codebase. Do not attempt to fix these unless specifically asked.
+- Seed data uses `org_busala_default` as the orgId. Use this value in `x-org-id` headers when testing API endpoints manually.
+- Standard commands (dev, build, lint, test) are documented in the "Build, Test, and Development Commands" section above.
