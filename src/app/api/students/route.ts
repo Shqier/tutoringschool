@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = url.searchParams.get('search')?.toLowerCase();
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: Record<string, unknown> = { orgId: user.orgId };
 
     if (statusFilter && statusFilter !== 'all') {
       where.status = statusFilter;

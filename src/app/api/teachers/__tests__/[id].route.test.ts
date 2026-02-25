@@ -8,13 +8,12 @@ import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createTestHeaders, cleanDatabase } from '@/lib/test/db-helpers';
-import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
 // ============================================
 // HELPERS
 // ============================================
 
-async function createTestTeacher(overrides: any = {}) {
+async function createTestTeacher(overrides: Record<string, unknown> = {}) {
   const defaultData = {
     fullName: 'Test Teacher',
     email: `teacher_${uuidv4()}@test.com`,
@@ -43,7 +42,7 @@ function createGetRequest(id: string, headers: Record<string, string> = {}): Nex
 
 function createPatchRequest(
   id: string,
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest(`http://localhost:3000/api/teachers/${id}`, {
@@ -355,7 +354,7 @@ describe('PATCH /api/teachers/[id]', () => {
 
   describe('Duplicate Email', () => {
     it('should reject email that already exists for another teacher', async () => {
-      const teacher1 = await createTestTeacher({ email: 'teacher1@test.com' });
+      const _teacher1 = await createTestTeacher({ email: 'teacher1@test.com' });
       const teacher2 = await createTestTeacher({ email: 'teacher2@test.com' });
 
       // Try to update teacher2's email to teacher1's email

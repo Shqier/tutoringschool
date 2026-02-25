@@ -109,6 +109,7 @@ export function TeacherLoadCard() {
   const { data, isLoading, error, refetch } = useTeachers({ status: 'active' });
 
   // Sort teachers by hours this week (descending)
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const teachers = React.useMemo(() => {
     if (!data?.teachers) return [];
     return [...data.teachers]

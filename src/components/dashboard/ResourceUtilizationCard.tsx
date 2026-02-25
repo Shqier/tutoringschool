@@ -13,7 +13,7 @@ import { AlertCircle } from 'lucide-react';
 import { useRooms, useTeachers, useLessons } from '@/lib/api/hooks';
 
 // Heatmap visualization component (placeholder - real heatmap requires more complex data processing)
-function Heatmap({ type }: { type: 'rooms' | 'teachers' }) {
+function Heatmap({ type: _type }: { type: 'rooms' | 'teachers' }) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const hours = [9, 10, 11, 12, 13, 14, 15];
 

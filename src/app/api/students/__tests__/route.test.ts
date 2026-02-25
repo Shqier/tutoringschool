@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../route';
 import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { createTestHeaders, cleanDatabase, createTestGroup, createTestTeacher } from '@/lib/test/db-helpers';
 import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
@@ -29,7 +28,7 @@ function createGetRequest(
 }
 
 function createPostRequest(
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest('http://localhost:3000/api/students', {
@@ -305,7 +304,7 @@ describe('GET /api/students', () => {
       const data = await response.json();
 
       expect(data.data).toHaveLength(2);
-      expect(data.data.every((s: any) => s.groupIds.includes(group1.id))).toBe(true);
+      expect(data.data.every((s: { groupIds: string[] }) => s.groupIds.includes(group1.id))).toBe(true);
     });
 
     it('should return empty array when no students in group', async () => {

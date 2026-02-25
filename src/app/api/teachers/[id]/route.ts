@@ -3,6 +3,7 @@
 // ============================================
 
 import { NextRequest } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { seedDatabase } from '@/lib/db/seed-prisma';
 import { updateTeacherSchema } from '@/lib/validators/schemas';
@@ -43,7 +44,7 @@ async function countLessonsToday(teacherId: string): Promise<number> {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { authorized, user, errorResponse: authError } = requireRole(request, 'staff');
+    const { authorized, errorResponse: authError } = requireRole(request, 'staff');
     if (!authorized) return authError;
 
     const { id } = await params;
@@ -110,8 +111,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         ...parsed.data,
-        weeklyAvailability: parsed.data.weeklyAvailability as any,
-        availabilityExceptions: parsed.data.availabilityExceptions as any,
+        weeklyAvailability: parsed.data.weeklyAvailability as unknown as Prisma.InputJsonValue,
+        availabilityExceptions: parsed.data.availabilityExceptions as unknown as Prisma.InputJsonValue,
       },
     });
 

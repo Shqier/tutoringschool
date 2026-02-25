@@ -3,6 +3,7 @@
 // ============================================
 
 import { NextRequest } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { seedDatabase } from '@/lib/db/seed-prisma';
 import { createTeacherSchema } from '@/lib/validators/schemas';
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = url.searchParams.get('search')?.toLowerCase();
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: Record<string, unknown> = { orgId: user.orgId };
 
     if (statusFilter && statusFilter !== 'all') {
       where.status = statusFilter;
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
     const enrichedTeachers = await Promise.all(
       teachers.map(async (teacher) => ({
         ...teacher,
-        weeklyAvailability: teacher.weeklyAvailability as any,
+        weeklyAvailability: teacher.weeklyAvailability as unknown,
         lessonsToday: await countLessonsToday(teacher.id),
       }))
     );
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
         phone,
         subjects,
         status,
-        weeklyAvailability: weeklyAvailability as any,
+        weeklyAvailability: weeklyAvailability as unknown as Prisma.InputJsonValue,
         hoursThisWeek: 0,
         maxHours,
         orgId: user.orgId,

@@ -2,7 +2,7 @@
 // TESTS: POST /api/lessons
 // ============================================
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { POST, GET } from '../route';
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +21,7 @@ import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 // ============================================
 
 function createRequest(
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {},
   searchParams: Record<string, string> = {}
 ): NextRequest {

@@ -20,7 +20,7 @@ import { prisma } from '@/lib/db/prisma';
 // HELPERS
 // ============================================
 
-async function createTestGroup(overrides: any = {}) {
+async function createTestGroup(overrides: Record<string, unknown> = {}) {
   const teacher = overrides.teacher || await createTestTeacher();
   const defaultData = {
     name: `Test Group ${uuidv4().substring(0, 8)}`,
@@ -47,7 +47,7 @@ function createGetRequest(id: string, headers: Record<string, string> = {}): Nex
 
 function createPatchRequest(
   id: string,
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest(`http://localhost:3000/api/groups/${id}`, {
@@ -66,7 +66,7 @@ function createDeleteRequest(id: string, headers: Record<string, string> = {}): 
 
 function createPutRequest(
   id: string,
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest(`http://localhost:3000/api/groups/${id}`, {
@@ -153,8 +153,8 @@ describe('GET /api/groups/[id]', () => {
       const data = await response.json();
 
       expect(data.students).toHaveLength(2);
-      expect(data.students.map((s: any) => s.id)).toContain(student1.id);
-      expect(data.students.map((s: any) => s.id)).toContain(student2.id);
+      expect(data.students.map((s: { id: string }) => s.id)).toContain(student1.id);
+      expect(data.students.map((s: { id: string }) => s.id)).toContain(student2.id);
     });
   });
 });
@@ -366,7 +366,7 @@ describe('PATCH /api/groups/[id]', () => {
 
   describe('Duplicate Name', () => {
     it('should reject name that already exists for another group', async () => {
-      const group1 = await createTestGroup({ name: 'Group 1' });
+      const _group1 = await createTestGroup({ name: 'Group 1' });
       const group2 = await createTestGroup({ name: 'Group 2' });
 
       // Try to update group2's name to group1's name

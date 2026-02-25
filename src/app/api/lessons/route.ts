@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const filters = filterParsed.data;
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: Record<string, unknown> = { orgId: user.orgId };
 
     if (filters.startDate) {
       where.startAt = { ...where.startAt, gte: new Date(filters.startDate) };

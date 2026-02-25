@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../route';
 import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { createTestHeaders, cleanDatabase } from '@/lib/test/db-helpers';
 import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
@@ -29,7 +28,7 @@ function createGetRequest(
 }
 
 function createPostRequest(
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest('http://localhost:3000/api/teachers', {
@@ -109,7 +108,7 @@ describe('GET /api/teachers', () => {
     });
 
     it('should include lessonsToday count', async () => {
-      const createResp = await POST(createPostRequest({
+      const _createResp = await POST(createPostRequest({
         fullName: 'Test Teacher',
         email: 'test@test.com',
         subjects: ['Math'],

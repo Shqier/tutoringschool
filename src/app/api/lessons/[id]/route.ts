@@ -71,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       room: lesson.room || null,
       group: lesson.group ? {
         ...lesson.group,
-        scheduleRule: lesson.group.scheduleRule as any,
+        scheduleRule: lesson.group.scheduleRule as Record<string, unknown>,
         createdAt: lesson.group.createdAt.toISOString(),
         updatedAt: lesson.group.updatedAt.toISOString(),
       } : null,
@@ -182,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Build update data
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
     if (parsed.data.startAt !== undefined) updateData.startAt = new Date(parsed.data.startAt);
     if (parsed.data.endAt !== undefined) updateData.endAt = new Date(parsed.data.endAt);

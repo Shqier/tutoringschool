@@ -12,7 +12,6 @@ import {
   createTestLesson,
   createTestHeaders,
 } from '@/lib/test/db-helpers';
-import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
 // ============================================
 // HELPERS
@@ -20,7 +19,7 @@ import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
 function createPatchRequest(
   id: string,
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): { request: NextRequest; params: { params: Promise<{ id: string }> } } {
   const url = new URL(`http://localhost:3000/api/lessons/${id}`);

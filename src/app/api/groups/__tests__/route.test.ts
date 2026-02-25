@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../route';
 import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import {
   createTestTeacher,
   createTestRoom,
@@ -36,7 +35,7 @@ function createGetRequest(
 }
 
 function createPostRequest(
-  body: any,
+  body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest('http://localhost:3000/api/groups', {
@@ -214,7 +213,7 @@ describe('GET /api/groups', () => {
       const data = await response.json();
 
       expect(data.data).toHaveLength(2);
-      expect(data.data.every((g: any) => g.teacherId === teacherId)).toBe(true);
+      expect(data.data.every((g: { teacherId: string }) => g.teacherId === teacherId)).toBe(true);
     });
   });
 
