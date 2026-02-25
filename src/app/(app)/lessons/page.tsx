@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   MapPin,
@@ -73,6 +74,7 @@ function mapStatus(status: Lesson['status']): 'upcoming' | 'in-progress' | 'comp
 }
 
 export default function LessonsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [teacherFilter, setTeacherFilter] = useState('all');
@@ -295,13 +297,22 @@ export default function LessonsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-card border-border">
-                    <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
+                      onClick={() => router.push(`/lessons/${lesson.id}`)}
+                    >
                       View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
+                      onClick={() => router.push(`/lessons/${lesson.id}`)}
+                    >
                       Edit Lesson
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
+                      onClick={() => toast.info('Attendance tracking coming soon')}
+                    >
                       Mark Attendance
                     </DropdownMenuItem>
                     <DropdownMenuItem

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Users,
@@ -30,6 +31,7 @@ import { useRooms, useDeleteRoom } from '@/lib/api/hooks';
 import type { Room } from '@/lib/api/types';
 
 export default function RoomsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -150,8 +152,11 @@ export default function RoomsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card border-border">
-                  <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
-                    View Schedule
+                  <DropdownMenuItem
+                    className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
+                    onClick={() => router.push(`/rooms/${room.id}`)}
+                  >
+                    View Details
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
@@ -227,13 +232,15 @@ export default function RoomsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => router.push(`/rooms/${room.id}`)}
                 className="flex-1 bg-busala-hover-bg border-border text-busala-text-primary hover:bg-busala-active-bg hover:text-busala-text-primary text-xs"
               >
-                View Schedule
+                View Details
               </Button>
               {room.status === 'available' && (
                 <Button
                   size="sm"
+                  onClick={() => router.push(`/rooms/${room.id}`)}
                   className="flex-1 busala-gradient-gold text-[#0B0D10] hover:opacity-90 text-xs"
                 >
                   Book Now

@@ -78,8 +78,6 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
   };
 
   const handleLogout = () => {
-    // In a real app, this would call logout API
-    console.log('Logging out...');
     router.push('/login');
   };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Users,
@@ -33,6 +34,7 @@ import { useGroups, useTeachers, useRooms, useLessons, useDeleteGroup } from '@/
 import type { Group } from '@/lib/api/types';
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [teacherFilter, setTeacherFilter] = useState('all');
@@ -249,7 +251,7 @@ export default function GroupsPage() {
                       className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedGroup(group);
+                        router.push(`/groups/${group.id}`);
                       }}
                     >
                       View Details

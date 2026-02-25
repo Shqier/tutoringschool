@@ -7,6 +7,7 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -117,7 +118,7 @@ export default function SchedulingPage() {
         subtitle="Manage your weekly schedule"
         actionLabel="Generate Schedule"
         actionIcon={Sparkles}
-        onAction={() => console.log('Generate schedule')}
+        onAction={() => toast.info('Auto-schedule generation coming soon')}
       />
 
       <div className="grid grid-cols-12 gap-6">

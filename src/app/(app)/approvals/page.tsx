@@ -8,7 +8,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -161,7 +161,6 @@ export default function ApprovalsPage() {
           >
             {/* Avatar / Type Icon */}
             <Avatar className="h-10 w-10">
-              <AvatarImage src={approval.requesterAvatar} alt={approval.requesterName} />
               <AvatarFallback className={`${getTypeColor(approval.type)} text-sm font-medium`}>
                 {getTypeIcon(approval.type)}
               </AvatarFallback>
