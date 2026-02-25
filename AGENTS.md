@@ -54,6 +54,6 @@
 - The `.env` file is not committed. It must contain `DATABASE_URL="postgresql://busala:busala@localhost:5432/busala"`.
 - `npm test` cleans the database. After running tests, re-seed with `npx prisma db seed` if you need sample data for the dev server.
 - The seed script is idempotent; it skips if data already exists. To force re-seed, truncate tables first.
-- Lint has pre-existing warnings/errors (57 errors, 46 warnings) in the existing codebase. Do not attempt to fix these unless specifically asked.
+- Lint has pre-existing warnings/errors (1 error in `src/app/error.tsx`, ~17 warnings) in the existing codebase. Do not attempt to fix these unless specifically asked.
 - Seed data uses `org_busala_default` as the orgId. Use this value in `x-org-id` headers when testing API endpoints manually.
 - Standard commands (dev, build, lint, test) are documented in the "Build, Test, and Development Commands" section above.
