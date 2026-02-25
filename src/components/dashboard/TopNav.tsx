@@ -13,7 +13,14 @@ import {
   LogOut,
   ChevronDown,
   Loader2,
+  Search,
+  Users,
+  BookOpen,
+  DoorOpen,
+  GraduationCap,
+  Calendar,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -41,17 +48,68 @@ interface TopNavProps {
   userAvatar?: string;
 }
 
+const SEARCH_TYPE_ICONS: Record<string, React.ElementType> = {
+  teacher: Users,
+  student: GraduationCap,
+  group: Users,
+  room: DoorOpen,
+  lesson: Calendar,
+};
+
 export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
   const [isDark, setIsDark] = React.useState(true);
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [addLessonOpen, setAddLessonOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<Array<{ type: string; id: string; title: string; subtitle: string; href: string }>>([]);
+  const [searchLoading, setSearchLoading] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const searchTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   React.useEffect(() => {
     setMounted(true);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const handleSearch = React.useCallback((query: string) => {
+    setSearchQuery(query);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setSearchResults(data.results || []);
+      } catch {
+        setSearchResults([]);
+      }
+      setSearchLoading(false);
+    }, 300);
+  }, []);
+
+  const handleSearchSelect = (href: string) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    router.push(href);
+  };
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -77,7 +135,8 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
     // setAddLessonOpen(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 
@@ -125,6 +184,17 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
+          {/* Search Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(true)}
+            className="text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
+            title="Search (⌘K)"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
           {/* Notification Bell with Dropdown */}
           {mounted ? (
             <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
@@ -316,6 +386,62 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
               Go to Lessons
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Global Search Dialog */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="bg-card border-border text-card-foreground sm:max-w-[500px] p-0 gap-0">
+          <div className="flex items-center gap-2 px-4 border-b border-border">
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search teachers, students, groups, rooms, lessons..."
+              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-12 text-sm"
+              autoFocus
+            />
+            {searchLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+            {searchResults.length > 0 ? (
+              <div className="py-2">
+                {searchResults.map((result) => {
+                  const Icon = SEARCH_TYPE_ICONS[result.type] || BookOpen;
+                  return (
+                    <button
+                      key={`${result.type}-${result.id}`}
+                      onClick={() => handleSearchSelect(result.href)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-busala-hover-bg transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-busala-hover-bg flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4 text-[#F5A623]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-card-foreground truncate">{result.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{result.subtitle}</p>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider px-1.5 py-0.5 rounded bg-busala-hover-bg">
+                        {result.type}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : searchQuery.length >= 2 && !searchLoading ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No results found for &quot;{searchQuery}&quot;
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Type at least 2 characters to search
+              </div>
+            )}
+          </div>
+          <div className="px-4 py-2 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>⌘K to open</span>
+            <span>ESC to close</span>
+          </div>
         </DialogContent>
       </Dialog>
     </header>

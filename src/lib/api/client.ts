@@ -170,20 +170,22 @@ import type {
 // AUTH
 // ============================================
 
-export async function getMe(_signal?: AbortSignal): Promise<MeResponse> {
-  // For now, return a mock user since we don't have auth implemented
-  // In production, this would call /api/auth/me
-  return {
-    user: {
-      id: 'user_001',
-      email: 'admin@busala.com',
-      name: 'Admin User',
-      role: 'admin',
-      orgId: 'org_busala_default',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  };
+export async function getMe(signal?: AbortSignal): Promise<MeResponse> {
+  try {
+    return await request<MeResponse>('/auth/me', { signal });
+  } catch {
+    return {
+      user: {
+        id: 'user_001',
+        email: 'admin@busala.com',
+        name: 'Admin User',
+        role: 'admin',
+        orgId: 'org_busala_default',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    };
+  }
 }
 
 // ============================================

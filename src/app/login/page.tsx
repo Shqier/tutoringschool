@@ -17,16 +17,35 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    // Simulate auth delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    toast.success('Welcome back!');
-    setIsLoading(false);
-    router.push('/');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error?.message || 'Failed to sign in');
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success(`Welcome back, ${data.user.name}!`);
+      const from = new URLSearchParams(window.location.search).get('from') || '/';
+      router.push(from);
+    } catch {
+      setError('Network error. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,6 +72,11 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+                {error}
+              </div>
+            )}
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-busala-text-muted">

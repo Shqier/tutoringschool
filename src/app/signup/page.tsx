@@ -19,22 +19,45 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate registration delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
 
-    toast.success('Account created successfully!');
-    setIsLoading(false);
-    router.push('/login');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error?.message || 'Failed to create account');
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success('Account created! Redirecting...');
+      router.push('/');
+    } catch {
+      setError('Network error. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
