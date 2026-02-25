@@ -106,6 +106,27 @@ export default function TeachersPage() {
     }
   };
 
+  const handleExport = () => {
+    const header = ['Name', 'Email', 'Phone', 'Subjects', 'Status', 'Hours/Max Hours'];
+    const rows = filteredTeachers.map((t) => [
+      t.fullName,
+      t.email,
+      t.phone || '',
+      t.subjects.join('; '),
+      t.status,
+      `${t.hoursThisWeek || 0}/${t.maxHours || 25}`,
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'teachers_export.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Teachers exported successfully');
+  };
+
   const columns = [
     { key: 'name', label: 'Teacher', width: 'flex-1' },
     { key: 'subjects', label: 'Subjects', width: 'w-40', hideOnMobile: true },
@@ -150,7 +171,7 @@ export default function TeachersPage() {
         subtitle={`${filteredTeachers.length} results`}
         columns={columns}
         headerAction={
-          <button className="text-xs text-[#F5A623] hover:underline">
+          <button className="text-xs text-[#F5A623] hover:underline" onClick={handleExport}>
             Export
           </button>
         }

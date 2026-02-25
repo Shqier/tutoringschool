@@ -87,6 +87,28 @@ export default function StudentsPage() {
     refetch();
   };
 
+  const handleExport = () => {
+    const header = ['Name', 'Email', 'Phone', 'Status', 'Attendance %', 'Balance', 'Plan'];
+    const rows = filteredStudents.map((s) => [
+      s.fullName,
+      s.email || '',
+      s.phone || '',
+      s.status,
+      `${s.attendancePercent || 0}`,
+      `${s.balance || 0}`,
+      s.plan || '',
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'students_export.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Students exported successfully');
+  };
+
   const columns = [
     { key: 'name', label: 'Student', width: 'flex-1' },
     { key: 'groups', label: 'Groups', width: 'w-44', hideOnMobile: true },
@@ -141,7 +163,7 @@ export default function StudentsPage() {
         subtitle={`${filteredStudents.length} results`}
         columns={columns}
         headerAction={
-          <button className="text-xs text-busala-gold hover:underline">
+          <button className="text-xs text-busala-gold hover:underline" onClick={handleExport}>
             Export
           </button>
         }
