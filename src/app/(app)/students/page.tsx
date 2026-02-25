@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   MoreVertical,
@@ -37,6 +38,8 @@ export default function StudentsPage() {
   const [_groupFilter, _setGroupFilter] = useState('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+
+  const router = useRouter();
 
   // Entity dialog state
   const dialog = useEntityDialog<Student>();
@@ -254,7 +257,7 @@ export default function StudentsPage() {
                     className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      dialog.openView(student);
+                      router.push(`/students/${student.id}`);
                     }}
                   >
                     View Profile

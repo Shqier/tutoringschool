@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   MoreVertical,
@@ -41,6 +42,7 @@ export default function TeachersPage() {
   const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
 
   // Fetch teachers
+  const router = useRouter();
   const { data: teachersData, isLoading, error, refetch } = useTeachers();
   const { mutate: deleteTeacher, isLoading: deleteLoading } = useDeleteTeacher();
 
@@ -220,7 +222,7 @@ export default function TeachersPage() {
                     className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedTeacher(teacher);
+                      router.push(`/teachers/${teacher.id}`);
                     }}
                   >
                     View Profile
