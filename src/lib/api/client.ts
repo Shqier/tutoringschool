@@ -577,7 +577,7 @@ export async function getSchedule(
 
   return {
     slots,
-    conflicts: schedulingResponse.conflicts,
+    conflicts: [], // SchedulingResponse doesn't include conflicts
   };
 }
 

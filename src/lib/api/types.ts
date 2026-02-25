@@ -157,22 +157,18 @@ export interface ConflictingLesson {
 export interface Approval {
   id: string;
   type: 'teacher_change' | 'student_request' | 'room_change';
+  title: string;
+  description: string;
   status: 'pending' | 'approved' | 'rejected';
   priority: 'low' | 'medium' | 'high';
-  requestedBy: string;
-  requestedByName?: string; // populated
-  reviewedBy?: string;
-  reviewedByName?: string; // populated
-  requestedAt: string;
-  reviewedAt?: string;
-  reason?: string;
+  requesterId: string;
+  requesterName: string;
+  reviewerId?: string;
+  reviewerName?: string;
+  createdAt: string;
+  updatedAt: string;
   reviewerNote?: string;
-  relatedEntity: {
-    type: 'teacher' | 'student' | 'room' | 'lesson' | 'group';
-    id: string;
-    name?: string;
-  };
-  details?: Record<string, unknown>;
+  payload?: Record<string, unknown>;
   orgId: string;
 }
 
@@ -368,4 +364,57 @@ export interface SchedulingResponse {
     name: string;
     utilizationPercent: number;
   }[];
+}
+
+// Schedule types
+export interface ScheduleQuery {
+  weekStart: string;
+}
+
+export interface ScheduleResponse {
+  slots: {
+    id: string;
+    day: string;
+    startTime: string;
+    endTime: string;
+    lessonTitle: string;
+    teacher: string;
+    room: string;
+    group: string;
+    color?: string;
+  }[];
+  conflicts: {
+    id: string;
+    type: string;
+    severity: 'high' | 'medium' | 'low';
+    description: string;
+  }[];
+}
+
+// Dashboard types
+export interface DashboardStatsResponse {
+  teachersCount: number;
+  studentsCount: number;
+  activeGroups: number;
+  roomsInUse: string;
+  pendingApprovals: number;
+}
+
+// Auth types
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    orgId: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+// Generic success response
+export interface SuccessResponse {
+  success: boolean;
+  message?: string;
 }

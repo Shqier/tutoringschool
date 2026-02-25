@@ -8,6 +8,7 @@ import {
   Clock,
   ChevronRight,
   MoreVertical,
+  DoorOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -139,8 +140,7 @@ export default function GroupsPage() {
     { key: 'name', label: 'Group / Teacher', width: 'flex-1' },
     { key: 'students', label: 'Students', width: 'w-24' },
     { key: 'schedule', label: 'Schedule', width: 'w-40', hideOnMobile: true },
-    { key: 'progress', label: 'Progress', width: 'w-28' },
-    { key: 'nextLesson', label: 'Next Lesson', width: 'w-32', hideOnTablet: true },
+    { key: 'room', label: 'Room', width: 'w-32', hideOnTablet: true },
     { key: 'actions', label: '', width: 'w-12' },
   ];
 
@@ -203,32 +203,21 @@ export default function GroupsPage() {
               {/* Students Count */}
               <div className="flex items-center gap-1.5 text-busala-text-muted w-24">
                 <Users className="h-3.5 w-3.5" />
-                <span className="text-xs">{group.studentsCount || group.studentIds?.length || 0} students</span>
+                <span className="text-xs">{group.studentCount || 0} students</span>
               </div>
 
               {/* Schedule */}
               <div className="hidden md:flex items-center gap-1.5 text-busala-text-muted w-40">
                 <Calendar className="h-3.5 w-3.5" />
-                <span className="text-xs truncate">{group.schedule || 'Not scheduled'}</span>
+                <span className="text-xs truncate">
+                  {group.scheduleRule ? 'Scheduled' : 'Not scheduled'}
+                </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-28">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-busala-hover-bg rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#F5A623] rounded-full transition-all"
-                      style={{ width: `${group.progress || 0}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-busala-text-muted w-8">{group.progress || 0}%</span>
-                </div>
-              </div>
-
-              {/* Next Lesson */}
+              {/* Room */}
               <div className="hidden lg:flex items-center gap-1.5 text-busala-text-muted w-32">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="text-xs">{group.nextLesson || 'No upcoming'}</span>
+                <DoorOpen className="h-3.5 w-3.5" />
+                <span className="text-xs">{group.roomName || 'No room'}</span>
               </div>
 
               {/* Actions */}
@@ -346,23 +335,23 @@ export default function GroupsPage() {
                     <div className="p-3 rounded-lg bg-busala-hover-bg">
                       <p className="text-xs text-busala-text-subtle mb-1">Students</p>
                       <p className="text-xl font-semibold text-busala-text-primary">
-                        {selectedGroup.studentsCount || selectedGroup.studentIds?.length || 0}
+                        {selectedGroup.studentCount || 0}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-busala-hover-bg">
-                      <p className="text-xs text-busala-text-subtle mb-1">Progress</p>
-                      <p className="text-xl font-semibold text-[#F5A623]">{selectedGroup.progress || 0}%</p>
+                      <p className="text-xs text-busala-text-subtle mb-1">Students</p>
+                      <p className="text-xl font-semibold text-[#F5A623]">{selectedGroup.studentCount || 0}</p>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t" style={{ borderColor: 'var(--busala-border-divider)' }}>
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-busala-text-muted">Schedule</span>
-                      <span className="text-busala-text-primary">{selectedGroup.schedule || 'Not set'}</span>
+                      <span className="text-busala-text-primary">{selectedGroup.scheduleRule ? 'Has Schedule' : 'Not set'}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-busala-text-muted">Next Lesson</span>
-                      <span className="text-busala-text-primary">{selectedGroup.nextLesson || 'None'}</span>
+                      <span className="text-busala-text-muted">Created</span>
+                      <span className="text-busala-text-primary">{selectedGroup.createdAt ? new Date(selectedGroup.createdAt).toLocaleDateString() : 'Unknown'}</span>
                     </div>
                   </div>
 

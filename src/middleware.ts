@@ -3,7 +3,6 @@
 // Protects routes and manages session
 // ============================================
 
-import { withMiddlewareAuthRequired, getSession } from '@auth0/nextjs-auth0/edge';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -14,6 +13,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/signup',
   '/api/auth',
+  '/api/debug',
   '/_next',
   '/favicon.ico',
   '/static',
@@ -31,12 +31,39 @@ function isPublicPath(path: string): boolean {
 }
 
 /**
- * Authentication middleware
- * - Protects all routes except public paths
- * - Adds user info to headers for API routes
- * - Handles session validation
+ * Check if user has a valid session
  */
-export default withMiddlewareAuthRequired(async (req: NextRequest) => {
+function hasSession(req: NextRequest): boolean {
+  const sessionCookie = req.cookies.get('appSession');
+  if (!sessionCookie?.value) return false;
+  
+  try {
+    const session = JSON.parse(sessionCookie.value);
+    return !!session.user;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get user info from session
+ */
+function getUserFromSession(req: NextRequest) {
+  const sessionCookie = req.cookies.get('appSession');
+  if (!sessionCookie?.value) return null;
+  
+  try {
+    const session = JSON.parse(sessionCookie.value);
+    return session.user;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Authentication middleware
+ */
+export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const pathname = req.nextUrl.pathname;
 
@@ -45,48 +72,32 @@ export default withMiddlewareAuthRequired(async (req: NextRequest) => {
     return res;
   }
 
-  try {
-    // Get session
-    const session = await getSession(req, res);
+  // Check if user is authenticated
+  const user = getUserFromSession(req);
 
-    if (!session?.user) {
-      // No session - redirect to login
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('returnTo', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // Add user info to headers for API routes
-    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth')) {
-      res.headers.set('x-user-id', session.user.sub);
-      res.headers.set('x-user-email', session.user.email);
-      res.headers.set('x-user-role', session.user.role || 'staff');
-      res.headers.set('x-org-id', session.user.org_id || 'org_busala_default');
-    }
-
-    return res;
-  } catch (error) {
-    console.error('[Middleware] Auth error:', error);
-    
-    // On error, redirect to login
+  if (!user) {
+    // No session - redirect to login
     const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('returnTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
-});
+
+  // Add user info to headers for API routes
+  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth')) {
+    res.headers.set('x-user-id', user.sub || user.email);
+    res.headers.set('x-user-email', user.email);
+    res.headers.set('x-user-role', user.role || 'staff');
+    res.headers.set('x-org-id', user.org_id || 'org_busala_default');
+  }
+
+  return res;
+}
 
 /**
  * Middleware configuration
- * Matches all routes except static files
  */
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 };

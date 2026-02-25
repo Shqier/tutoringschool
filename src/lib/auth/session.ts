@@ -2,96 +2,83 @@
 // AUTH0 SESSION UTILITIES
 // ============================================
 
-import { getSession as getAuth0Session, updateSession } from '@auth0/nextjs-auth0';
-import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
-import type { Session, Auth0User } from './config';
 
 /**
- * Get the current session from a Next.js API route or Server Component
+ * User info structure
  */
-export async function getSession(req?: NextRequest): Promise<Session | null> {
-  try {
-    if (req) {
-      // API route context
-      const session = await getAuth0Session(req);
-      return session as Session | null;
-    } else {
-      // Server Component context
-      const session = await getAuth0Session();
-      return session as Session | null;
-    }
-  } catch (error) {
-    console.error('Error getting session:', error);
+export interface Auth0User {
+  sub: string;
+  email: string;
+  email_verified: boolean;
+  name?: string;
+  picture?: string;
+  org_id?: string;
+  role?: string;
+  db_id?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Session data structure
+ */
+export interface Session {
+  user: Auth0User;
+  accessToken?: string;
+  refreshToken?: string;
+  idToken?: string;
+  accessTokenExpiresAt?: number;
+  createdAt: number;
+}
+
+/**
+ * Get the current user from request headers (set by middleware)
+ * This is used in API routes
+ */
+export async function getUserFromHeaders(request: Request): Promise<Auth0User | null> {
+  // Headers are set by the auth middleware (src/middleware.ts)
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userRole = request.headers.get('x-user-role');
+  const orgId = request.headers.get('x-org-id');
+
+  if (!userId || userId === 'anonymous') {
     return null;
   }
+
+  return {
+    sub: userId,
+    email: userEmail || '',
+    email_verified: true,
+    role: userRole || 'staff',
+    org_id: orgId || 'org_busala_default',
+  };
 }
 
 /**
- * Get the current user from session
+ * Check if user is authenticated from headers
  */
-export async function getUser(req?: NextRequest): Promise<Auth0User | null> {
-  const session = await getSession(req);
-  return session?.user || null;
-}
-
-/**
- * Check if user is authenticated
- */
-export async function isAuthenticated(req?: NextRequest): Promise<boolean> {
-  const user = await getUser(req);
-  return !!user;
+export async function isAuthenticated(request: Request): Promise<boolean> {
+  const userId = request.headers.get('x-user-id');
+  return !!userId && userId !== 'anonymous';
 }
 
 /**
  * Require authentication - throws if not authenticated
  */
-export async function requireAuth(req?: NextRequest): Promise<Auth0User> {
-  const user = await getUser(req);
-  
+export async function requireAuth(request: Request): Promise<Auth0User> {
+  const user = await getUserFromHeaders(request);
+
   if (!user) {
     throw new Error('Unauthorized');
   }
-  
+
   return user;
 }
 
 /**
- * Get access token for API calls
+ * Get orgId from request headers
  */
-export async function getAccessToken(req?: NextRequest): Promise<string | null> {
-  const session = await getSession(req);
-  return session?.accessToken || null;
-}
-
-/**
- * Update user metadata in session
- */
-export async function updateUserMetadata(
-  metadata: Record<string, unknown>,
-  req?: NextRequest
-): Promise<void> {
-  const session = await getSession(req);
-  
-  if (!session) {
-    throw new Error('No session found');
-  }
-  
-  const updatedUser = {
-    ...session.user,
-    ...metadata,
-  };
-  
-  if (req) {
-    await updateSession(req, { ...session, user: updatedUser });
-  }
-}
-
-/**
- * Get orgId from user session
- * Falls back to default org if not set
- */
-export async function getOrgId(req?: NextRequest): Promise<string> {
-  const user = await getUser(req);
-  return user?.org_id || 'org_busala_default';
+export function getOrgId(request: Request): string {
+  return request.headers.get('x-org-id') || 'org_busala_default';
 }

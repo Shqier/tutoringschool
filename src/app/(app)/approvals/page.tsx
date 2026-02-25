@@ -161,7 +161,7 @@ export default function ApprovalsPage() {
           >
             {/* Avatar / Type Icon */}
             <Avatar className="h-10 w-10">
-              <AvatarImage src={approval.requesterAvatar} alt={approval.requesterName} />
+              <AvatarImage src={undefined} alt={approval.requesterName} />
               <AvatarFallback className={`${getTypeColor(approval.type)} text-sm font-medium`}>
                 {getTypeIcon(approval.type)}
               </AvatarFallback>

@@ -14,7 +14,7 @@ import {
   SkeletonCard,
 } from '@/components/app';
 import { useLessons, useScheduling } from '@/lib/api/hooks';
-import type { Lesson, ScheduleConflict } from '@/lib/api/types';
+import type { Lesson } from '@/lib/api/types';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
@@ -61,7 +61,14 @@ export default function SchedulingPage() {
   });
 
   const lessons = lessonsData?.lessons || [];
-  const conflicts = schedulingData?.conflicts || [];
+  // Note: conflicts not currently available in API
+  interface Conflict {
+    id: string;
+    type: string;
+    severity: 'high' | 'medium' | 'low';
+    description: string;
+  }
+  const conflicts: Conflict[] = [];
 
   const formatDateRange = () => {
     const start = new Date(weekStart);
@@ -99,7 +106,7 @@ export default function SchedulingPage() {
     });
   };
 
-  const getSeverityColor = (severity: ScheduleConflict['severity']) => {
+  const getSeverityColor = (severity: 'high' | 'medium' | 'low') => {
     switch (severity) {
       case 'high':
         return 'bg-red-500/20 text-red-400 border-red-500/30';

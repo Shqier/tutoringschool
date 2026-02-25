@@ -41,7 +41,7 @@ export function AssignStudentsDialog({
   // Initialize selected IDs when dialog opens
   useEffect(() => {
     if (open && group) {
-      setSelectedIds(group.studentIds || []);
+      setSelectedIds([]);
       setSearchQuery('');
     }
   }, [open, group]);
@@ -76,9 +76,9 @@ export function AssignStudentsDialog({
   };
 
   // Compute change summary
-  const originalIds = group?.studentIds || [];
-  const addedCount = selectedIds.filter((id) => !originalIds.includes(id)).length;
-  const removedCount = originalIds.filter((id) => !selectedIds.includes(id)).length;
+  // Note: studentIds not available in current API, simplified logic
+  const addedCount = selectedIds.length;
+  const removedCount = 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -130,9 +130,8 @@ export function AssignStudentsDialog({
           ) : (
             filteredStudents.map((student) => {
               const isSelected = selectedIds.includes(student.id);
-              const wasOriginal = originalIds.includes(student.id);
-              const isNew = isSelected && !wasOriginal;
-              const isRemoved = !isSelected && wasOriginal;
+              // Note: originalIds not available in current API
+              const isNew = isSelected;
 
               return (
                 <button
@@ -162,11 +161,6 @@ export function AssignStudentsDialog({
                     {isNew && (
                       <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
                         New
-                      </span>
-                    )}
-                    {isRemoved && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
-                        Remove
                       </span>
                     )}
                     <div

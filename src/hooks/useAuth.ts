@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useUser as useAuth0User } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect } from 'react';
 
@@ -34,7 +34,8 @@ export interface UseAuthReturn {
  * Hook for accessing authentication state and methods
  */
 export function useAuth(): UseAuthReturn {
-  const { user: auth0User, error, isLoading } = useAuth0User();
+  const { user: auth0User, error: auth0Error, isLoading } = useUser();
+  const error = auth0Error || null;
   const router = useRouter();
 
   const user = auth0User as User | null;

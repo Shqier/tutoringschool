@@ -2,8 +2,6 @@
 // AUTH0 CONFIGURATION
 // ============================================
 
-import { GetSession } from '@auth0/nextjs-auth0';
-
 /**
  * Auth0 configuration object
  * Loaded from environment variables

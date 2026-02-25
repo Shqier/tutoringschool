@@ -19,9 +19,6 @@ interface GroupRowProps {
 function GroupRow({ group }: GroupRowProps) {
   // Format schedule from schedule rule (if available)
   const formatSchedule = () => {
-    if (group.schedule) {
-      return group.schedule;
-    }
     if (group.scheduleRule) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const dayNames = group.scheduleRule.daysOfWeek.map(d => days[d]).join(', ');
@@ -43,7 +40,7 @@ function GroupRow({ group }: GroupRowProps) {
       {/* Students Count */}
       <div className="flex items-center gap-1.5 text-busala-text-subtle w-20">
         <Users className="h-3.5 w-3.5" />
-        <span className="text-xs">{group.studentsCount || group.studentIds.length} students</span>
+        <span className="text-xs">{group.studentCount || 0} students</span>
       </div>
 
       {/* Schedule */}
@@ -52,23 +49,9 @@ function GroupRow({ group }: GroupRowProps) {
         <span className="text-xs truncate">{formatSchedule()}</span>
       </div>
 
-      {/* Progress Bar */}
+      {/* Room */}
       <div className="w-24">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-busala-hover-bg rounded-full overflow-hidden">
-            <div
-              className="h-full bg-busala-gold rounded-full transition-all"
-              style={{ width: `${group.progress || 0}%` }}
-            />
-          </div>
-          <span className="text-xs text-busala-text-subtle w-8">{group.progress || 0}%</span>
-        </div>
-      </div>
-
-      {/* Next Lesson */}
-      <div className="hidden xl:flex items-center gap-1.5 text-busala-text-subtle w-32">
-        <Clock className="h-3.5 w-3.5" />
-        <span className="text-xs">{group.nextLesson || 'Not scheduled'}</span>
+        <span className="text-xs text-busala-text-subtle">{group.roomName || 'No room'}</span>
       </div>
 
       {/* Arrow */}
