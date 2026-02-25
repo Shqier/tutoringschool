@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ApiClientError, ApiConflictError } from './client';
 import * as api from './client';
 import type {
+  Lesson,
   LessonsQuery,
   LessonsResponse,
   TeachersQuery,
@@ -21,6 +22,7 @@ import type {
   StudentsQuery,
   StudentsResponse,
   Student,
+  Room,
   RoomsQuery,
   RoomsResponse,
   ApprovalsQuery,
@@ -241,6 +243,16 @@ export function useUpdateLesson() {
   );
 }
 
+export function useLesson(id: string | null) {
+  return useQuery<Lesson>(
+    (signal) => {
+      if (!id) return Promise.reject(new Error('No ID provided'));
+      return api.getLesson(id, signal);
+    },
+    [id]
+  );
+}
+
 export function useDeleteLesson() {
   return useMutation((id: string, signal: AbortSignal) => api.deleteLesson(id, signal));
 }
@@ -395,6 +407,16 @@ export function useRooms(query?: RoomsQuery) {
   return { ...result, data: normalizedData };
 }
 
+export function useRoom(id: string | null) {
+  return useQuery<Room>(
+    (signal) => {
+      if (!id) return Promise.reject(new Error('No ID provided'));
+      return api.getRoom(id, signal);
+    },
+    [id]
+  );
+}
+
 export function useCreateRoom() {
   return useMutation(api.createRoom);
 }
@@ -447,5 +469,27 @@ export function useScheduling(query?: SchedulingQuery) {
   return useQuery<SchedulingResponse>(
     (signal) => api.getScheduling(query, signal),
     [JSON.stringify(query)]
+  );
+}
+
+// Notifications
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  unread: boolean;
+  type: 'approval' | 'student' | 'lesson';
+}
+
+interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+}
+
+export function useNotifications() {
+  return useQuery<NotificationsResponse>(
+    (signal) => api.getNotifications(signal),
+    []
   );
 }

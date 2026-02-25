@@ -209,6 +209,13 @@ export async function getLessons(
   return request<LessonsResponse>(`/lessons${qs}`, { signal });
 }
 
+export async function getLesson(
+  id: string,
+  signal?: AbortSignal
+): Promise<Lesson> {
+  return request<Lesson>(`/lessons/${id}`, { signal });
+}
+
 export async function createLesson(
   input: CreateLessonInput,
   options?: { signal?: AbortSignal; forceCreate?: boolean }
@@ -609,4 +616,14 @@ export async function getDashboardStats(
     roomsInUse: `${occupiedRooms}/${totalRooms}`,
     pendingApprovals: approvals.counts?.pending || approvals.pagination.total,
   };
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export async function getNotifications(
+  signal?: AbortSignal
+): Promise<{ notifications: Array<{ id: string; title: string; message: string; time: string; unread: boolean; type: string }>; unreadCount: number }> {
+  return request<{ notifications: Array<{ id: string; title: string; message: string; time: string; unread: boolean; type: string }>; unreadCount: number }>('/notifications', { signal });
 }

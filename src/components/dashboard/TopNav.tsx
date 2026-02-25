@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +33,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { topNavItems } from '@/data/mock-data';
+import { useNotifications } from '@/lib/api/hooks';
 import type { NavItem } from '@/types/dashboard';
 
 interface TopNavProps {
@@ -81,32 +83,9 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
     router.push('/login');
   };
 
-  // Mock notifications
-  const notifications = [
-    {
-      id: '1',
-      title: 'New student enrolled',
-      message: 'Mohammed Al-Rashid joined Arabic Beginners A1',
-      time: '5 min ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      title: 'Lesson completed',
-      message: 'Arabic Intermediate B1 - 10:30 session ended',
-      time: '1 hour ago',
-      unread: true,
-    },
-    {
-      id: '3',
-      title: 'Room booking request',
-      message: 'Fatima Ali requested Conference Room',
-      time: '2 hours ago',
-      unread: false,
-    },
-  ];
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const { data: notificationsData, isLoading: notificationsLoading } = useNotifications();
+  const notifications = notificationsData?.notifications || [];
+  const unreadCount = notificationsData?.unreadCount || 0;
 
   return (
     <header
@@ -176,21 +155,31 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />
-              {notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="flex flex-col items-start gap-1 p-3 cursor-pointer hover:bg-busala-hover-bg focus:bg-busala-hover-bg"
-                >
-                  <div className="flex items-start justify-between w-full">
-                    <span className="text-sm font-medium">{notification.title}</span>
-                    {notification.unread && (
-                      <span className="w-2 h-2 bg-busala-gold rounded-full mt-1" />
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{notification.message}</span>
-                  <span className="text-xs text-busala-text-subtle">{notification.time}</span>
-                </DropdownMenuItem>
-              ))}
+              {notificationsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="text-center py-6 text-xs text-muted-foreground">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex flex-col items-start gap-1 p-3 cursor-pointer hover:bg-busala-hover-bg focus:bg-busala-hover-bg"
+                  >
+                    <div className="flex items-start justify-between w-full">
+                      <span className="text-sm font-medium">{notification.title}</span>
+                      {notification.unread && (
+                        <span className="w-2 h-2 bg-busala-gold rounded-full mt-1" />
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{notification.message}</span>
+                    <span className="text-xs text-busala-text-subtle">{notification.time}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem className="justify-center text-sm text-busala-gold hover:bg-busala-hover-bg focus:bg-busala-hover-bg cursor-pointer">
                 View all notifications
