@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { UserProvider } from '@auth0/nextjs-auth0/client';
 import './globals.css';
 
 const geistSans = Geist({
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Busala Dashboard',
-  description: 'School management dashboard for Busala',
+  title: 'Busala - School Management System',
+  description: 'Streamline your school operations with our comprehensive management platform',
 };
 
 export default function RootLayout({
@@ -28,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
         <Toaster
           position="top-right"
           toastOptions={{

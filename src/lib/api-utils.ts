@@ -119,23 +119,53 @@ export function hasMinimumRole(userRole: UserRole, minimumRole: UserRole): boole
 }
 
 /**
- * Get user role from request headers (placeholder for real auth)
- * In production, this would validate a JWT or session
+ * User info structure from request
  */
-export function getUserFromRequest(request: Request): {
+export interface RequestUser {
   id: string;
   role: UserRole;
   orgId: string;
-} {
-  // For development, use headers or defaults
+  email?: string;
+}
+
+/**
+ * Get user info from request headers (set by middleware)
+ * This is the NEW way - using headers set by auth middleware
+ */
+export function getUserFromRequest(request: Request): RequestUser {
+  // Headers are set by the auth middleware (src/middleware.ts)
   const roleHeader = request.headers.get('x-user-role') as UserRole | null;
   const userIdHeader = request.headers.get('x-user-id');
   const orgIdHeader = request.headers.get('x-org-id');
+  const emailHeader = request.headers.get('x-user-email');
+
+  // If headers are missing, we're in an unprotected route or middleware failed
+  if (!userIdHeader || !roleHeader || !orgIdHeader) {
+    // Check if we're in development mode with explicit dev headers
+    const devRole = request.headers.get('x-dev-role') as UserRole | null;
+    if (process.env.NODE_ENV === 'development' && devRole) {
+      return {
+        id: 'dev_user',
+        role: devRole,
+        orgId: 'org_busala_default',
+        email: 'dev@busala.com',
+      };
+    }
+    
+    // Return minimal permissions for unauthenticated requests
+    return {
+      id: 'anonymous',
+      role: 'staff',
+      orgId: 'org_busala_default',
+      email: undefined,
+    };
+  }
 
   return {
-    id: userIdHeader || 'user_default',
-    role: roleHeader || 'admin', // Default to admin for development
-    orgId: orgIdHeader || 'org_busala_default',
+    id: userIdHeader,
+    role: roleHeader,
+    orgId: orgIdHeader,
+    email: emailHeader || undefined,
   };
 }
 
@@ -144,10 +174,24 @@ export function getUserFromRequest(request: Request): {
  */
 export function requireRole(request: Request, minimumRole: UserRole): {
   authorized: boolean;
-  user: { id: string; role: UserRole; orgId: string };
+  user: RequestUser;
   errorResponse?: NextResponse;
 } {
   const user = getUserFromRequest(request);
+  
+  // Check if user is authenticated
+  if (user.id === 'anonymous') {
+    return {
+      authorized: false,
+      user,
+      errorResponse: errorResponse(
+        'UNAUTHORIZED',
+        'Authentication required',
+        401
+      ),
+    };
+  }
+  
   const authorized = hasMinimumRole(user.role, minimumRole);
 
   if (!authorized) {
@@ -163,4 +207,29 @@ export function requireRole(request: Request, minimumRole: UserRole): {
   }
 
   return { authorized: true, user };
+}
+
+/**
+ * Require authentication only (any role)
+ */
+export function requireAuth(request: Request): {
+  authenticated: boolean;
+  user: RequestUser;
+  errorResponse?: NextResponse;
+} {
+  const user = getUserFromRequest(request);
+  
+  if (user.id === 'anonymous') {
+    return {
+      authenticated: false,
+      user,
+      errorResponse: errorResponse(
+        'UNAUTHORIZED',
+        'Authentication required',
+        401
+      ),
+    };
+  }
+  
+  return { authenticated: true, user };
 }

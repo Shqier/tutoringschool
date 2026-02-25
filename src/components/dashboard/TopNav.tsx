@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,14 +33,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { topNavItems } from '@/data/mock-data';
+import { useAuth, useUserRole } from '@/hooks/useAuth';
 import type { NavItem } from '@/types/dashboard';
 
-interface TopNavProps {
-  userName?: string;
-  userAvatar?: string;
-}
-
-export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
+export function TopNav() {
   const [isDark, setIsDark] = React.useState(true);
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [addLessonOpen, setAddLessonOpen] = React.useState(false);
@@ -75,11 +72,17 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
     // setAddLessonOpen(true);
   };
 
+  const { user, isLoading: authLoading, logout } = useAuth();
+  const { role } = useUserRole();
+  
   const handleLogout = () => {
-    // In a real app, this would call logout API
-    console.log('Logging out...');
-    router.push('/login');
+    logout();
   };
+  
+  // Get user info from auth
+  const userName = user?.name || user?.email?.split('@')[0] || 'User';
+  const userAvatar = user?.picture;
+  const userEmail = user?.email || '';
 
   // Mock notifications
   const notifications = [
@@ -243,7 +246,10 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{userName}</span>
-                  <span className="text-xs text-muted-foreground">sarah@busala.com</span>
+                  <span className="text-xs text-muted-foreground">{userEmail}</span>
+                  {role && (
+                    <span className="text-xs text-[#F5A623] capitalize mt-1">{role}</span>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />

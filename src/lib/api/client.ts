@@ -55,14 +55,15 @@ async function request<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
-      // Default dev headers - backend uses x-user-role, x-user-id, x-org-id
-      'x-user-role': 'admin',
-      'x-user-id': 'user_default',
-      'x-org-id': 'org_busala_default',
+      // Note: Auth headers are automatically set by middleware
+      // from the Auth0 session. Don't add them here.
       ...headers,
     },
     signal,
   };
+  
+  // Add credentials to include cookies for auth
+  config.credentials = 'same-origin';
 
   // Add force-create header if requested
   if (forceCreate && (method === 'POST' || method === 'PATCH')) {
