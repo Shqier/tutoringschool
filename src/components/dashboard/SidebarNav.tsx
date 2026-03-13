@@ -13,10 +13,13 @@ import {
   ClipboardCheck,
   Settings,
   Calendar,
+  Clock,
+  User,
+  CreditCard,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { sidebarNavItems, sidebarBottomItems } from '@/data/mock-data';
-import type { NavItem } from '@/types/dashboard';
+import { sidebarNavItems, sidebarBottomItems } from '@/config/navigation';
+import type { NavItem } from '@/config/navigation';
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -28,6 +31,9 @@ const iconMap: Record<string, React.ElementType> = {
   ClipboardCheck,
   Settings,
   Calendar,
+  Clock,
+  User,
+  CreditCard,
 };
 
 export function SidebarNav() {

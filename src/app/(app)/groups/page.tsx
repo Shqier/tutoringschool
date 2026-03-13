@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Users,
@@ -33,6 +34,7 @@ import { useGroups, useTeachers, useRooms, useLessons, useDeleteGroup } from '@/
 import type { Group } from '@/lib/api/types';
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [teacherFilter, setTeacherFilter] = useState('all');
@@ -191,7 +193,7 @@ export default function GroupsPage() {
           return (
             <DataTableRow
               key={group.id}
-              onClick={() => setSelectedGroup(group)}
+              onClick={() => router.push(`/groups/${group.id}`)}
               className={selectedGroup?.id === group.id ? 'bg-busala-hover-bg' : ''}
             >
               {/* Group Name & Teacher */}
@@ -203,7 +205,7 @@ export default function GroupsPage() {
               {/* Students Count */}
               <div className="flex items-center gap-1.5 text-busala-text-muted w-24">
                 <Users className="h-3.5 w-3.5" />
-                <span className="text-xs">{group.studentsCount || group.studentIds?.length || 0} students</span>
+                <span className="text-xs">{group.studentCount ?? 0} students</span>
               </div>
 
               {/* Schedule */}
@@ -249,7 +251,7 @@ export default function GroupsPage() {
                       className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedGroup(group);
+                        router.push(`/groups/${group.id}`);
                       }}
                     >
                       View Details
@@ -346,7 +348,7 @@ export default function GroupsPage() {
                     <div className="p-3 rounded-lg bg-busala-hover-bg">
                       <p className="text-xs text-busala-text-subtle mb-1">Students</p>
                       <p className="text-xl font-semibold text-busala-text-primary">
-                        {selectedGroup.studentsCount || selectedGroup.studentIds?.length || 0}
+                        {selectedGroup.studentCount ?? 0}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-busala-hover-bg">

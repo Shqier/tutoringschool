@@ -180,7 +180,7 @@ export default function ApprovalsPage() {
                 <span className="text-xs text-busala-text-subtle">by {approval.requesterName}</span>
                 <span className="text-xs text-busala-text-subtle flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {formatTimestamp(approval.createdAt)}
+                  {formatTimestamp(approval.createdAt ?? approval.requestedAt ?? '')}
                 </span>
               </div>
             </div>

@@ -34,6 +34,8 @@ export interface User {
   name: string;
   role: 'admin' | 'manager' | 'teacher' | 'staff';
   orgId: string;
+  avatarUrl?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,17 +74,58 @@ export interface Teacher {
   updatedAt: string;
 }
 
+// Profile types (extended entities with stats / related data)
+export interface TeacherProfile extends Teacher {
+  totalLessonsTaught: number;
+  totalStudentsTaught: number;
+  recentLessons: Lesson[];
+  monthlyHours: { month: string; hours: number }[];
+}
+
+export interface StudentProfile extends Student {
+  attendanceHistory?: StudentAttendanceRecord[];
+  notes?: string;
+}
+
+export interface GroupProfile extends Group {
+  students?: Array<Student & { attendancePercent?: number }>;
+  averageAttendance?: number;
+  lessonsThisMonth?: number;
+  progressHistory?: { date: string; progress: number }[];
+}
+
+export interface SuccessResponse {
+  success: boolean;
+  deletedId?: string;
+}
+
+export interface PaymentPlan {
+  id: string;
+  name: string;
+  tier: 'elementary' | 'high_school';
+  type: 'subscription' | 'pay_as_you_go';
+  lessonsPerMonth?: number | null;
+  monthlyPrice?: number | null;
+  lessonPrice?: number | null;
+  duration?: number;
+  orgId: string;
+  isActive?: boolean;
+}
+
 export interface Student {
   id: string;
   fullName: string;
   email?: string;
   phone?: string;
   status: 'active' | 'at_risk' | 'inactive';
+  grade?: number | null;
+  planId?: string | null;
+  paymentStatus?: 'active' | 'overdue' | 'cancelled' | 'suspended';
+  plan?: PaymentPlan | null;
   groupIds: string[];
   attendancePercent?: number;
-  balance?: number;
-  plan?: string;
   enrolledDate?: string;
+  notes?: string;
   orgId: string;
   createdAt: string;
   updatedAt: string;
@@ -119,6 +162,10 @@ export interface Group {
   studentCount?: number;
   color?: string;
   scheduleRule?: ScheduleRule;
+  schedule?: string; // formatted display string
+  progress?: number;
+  nextLesson?: string;
+  studentIds?: string[]; // populated by GET /api/groups/[id]
   orgId: string;
   createdAt: string;
   updatedAt: string;
@@ -161,12 +208,17 @@ export interface Approval {
   priority: 'low' | 'medium' | 'high';
   requestedBy: string;
   requestedByName?: string; // populated
+  requesterName?: string; // API may return this
+  requesterAvatar?: string;
   reviewedBy?: string;
   reviewedByName?: string; // populated
   requestedAt: string;
+  createdAt?: string; // API may return this
   reviewedAt?: string;
   reason?: string;
   reviewerNote?: string;
+  title?: string;
+  description?: string;
   relatedEntity: {
     type: 'teacher' | 'student' | 'room' | 'lesson' | 'group';
     id: string;
@@ -220,6 +272,15 @@ export interface ConflictResponse {
   message: string;
 }
 
+/** Scheduling overview conflicts (GET /api/scheduling) */
+export interface ScheduleConflict {
+  id: string;
+  type: 'teacher' | 'room';
+  description: string;
+  lessonIds: string[];
+  severity: 'low' | 'medium' | 'high';
+}
+
 // Teachers
 export interface TeachersQuery {
   page?: number;
@@ -259,6 +320,13 @@ export interface GroupDetailResponse extends Group {
   students?: Student[];
 }
 
+export interface GroupStatsResponse {
+  averageAttendance: number;
+  lessonsThisMonth: number;
+  totalStudents: number;
+  nextLesson: { id: string; title: string; startAt: string } | null;
+}
+
 export interface CreateGroupInput {
   name: string;
   teacherId: string;
@@ -291,8 +359,10 @@ export interface CreateStudentInput {
   phone?: string;
   status?: 'active' | 'at_risk' | 'inactive';
   groupIds?: string[];
-  balance?: number;
-  plan?: string;
+  grade?: number | null;
+  planId?: string | null;
+  paymentStatus?: 'active' | 'overdue' | 'cancelled' | 'suspended';
+  notes?: string;
 }
 
 export type UpdateStudentInput = Partial<CreateStudentInput>;
@@ -355,17 +425,280 @@ export interface SchedulingQuery {
 }
 
 export interface SchedulingResponse {
-  lessons: Lesson[];
+  lessonsCount: number;
+  conflicts: ScheduleConflict[];
+  conflictsCount: number;
+}
+
+// ============================================
+// AVAILABILITY TYPES
+// ============================================
+
+export interface DayAvailability {
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  slots: {
+    start: string; // HH:mm
+    end: string;   // HH:mm
+  }[];
+}
+
+export interface TeacherAvailability {
+  teacher: {
+    id: string;
+    fullName: string;
+  };
+  availability: DayAvailability[];
+  status: 'confirmed' | 'pending' | 'updated';
+  confirmedAt?: string;
+  confirmedForMonth?: number;
+  confirmedForYear?: number;
+  lastUpdated: string;
+}
+
+export type UpdateAvailabilityInput = DayAvailability[];
+
+export interface PendingTeacher {
+  id: string;
+  fullName: string;
+  email: string;
+  hasAvailability: boolean;
+  status: 'confirmed' | 'pending' | 'updated';
+  confirmedAt?: string;
+  confirmedForMonth?: number;
+  confirmedForYear?: number;
+  daysSinceConfirmed: number | null;
+  isCurrentMonthConfirmed: boolean;
+  lastUpdated: string;
+}
+
+export interface PendingConfirmationsResponse {
+  month: number;
+  year: number;
+  summary: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    updated: number;
+    autoConfirmDate: string;
+    daysUntilAutoConfirm: number;
+  };
   teachers: {
+    pending: PendingTeacher[];
+    confirmed: PendingTeacher[];
+    updated: PendingTeacher[];
+  };
+}
+
+// ============================================
+// NOTIFICATION TYPES
+// ============================================
+
+export interface Notification {
+  id: string;
+  type: 'availability_confirmation' | 'approval_request' | 'approval_resolved' | 'lesson_reminder' | 'payment_due' | 'system';
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  readAt?: string;
+  actionUrl?: string;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  count: number;
+}
+
+// ============================================
+// AUTH & SETTINGS TYPES
+// ============================================
+
+export interface MeResponse {
+  user: User;
+}
+
+export interface SettingsProfile {
+  name: string;
+  address: string;
+  timezone: string;
+  phone?: string;
+  email?: string;
+  orgId?: string;
+}
+
+export interface RolesResponse {
+  roles: Array<{ id: string; role: string; permissions: string[]; usersCount: number }>;
+}
+
+export interface UserPreferencesResponse {
+  language: string;
+  timezone: string;
+  notifications?: Record<string, boolean>;
+}
+
+export interface ScheduleQuery {
+  weekStart: string;
+}
+
+export interface ScheduleResponse {
+  slots: Array<{
     id: string;
-    name: string;
-    hoursScheduled: number;
-    maxHours: number;
-    availability: AvailabilitySlot[];
-  }[];
-  rooms: {
+    day: string;
+    startTime: string;
+    endTime: string;
+    lessonTitle: string;
+    teacher: string;
+    room: string;
+    group: string;
+    color?: string;
+  }>;
+  conflicts?: unknown[];
+}
+
+export interface DashboardStatsResponse {
+  teachersCount: number;
+  studentsCount: number;
+  activeGroups: number;
+  roomsInUse: string;
+  pendingApprovals: number;
+}
+
+// ============================================
+// ATTENDANCE TYPES
+// ============================================
+
+export type AttendanceStatusType = 'present' | 'absent' | 'late' | 'excused';
+
+export interface Attendance {
+  id: string;
+  lessonId: string;
+  studentId: string;
+  status: AttendanceStatusType;
+  markedById: string;
+  markedAt: string;
+  note?: string;
+}
+
+export interface AttendanceWithStudent extends Attendance {
+  student: {
     id: string;
-    name: string;
-    utilizationPercent: number;
-  }[];
+    fullName: string;
+  };
+}
+
+export interface LessonAttendance {
+  lessonId: string;
+  lesson?: {
+    title: string;
+    startAt: string;
+    endAt: string;
+    groupName: string | null;
+    teacherName: string | null;
+    roomName: string | null;
+  };
+  attendances: AttendanceWithStudent[];
+  stats: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+  };
+}
+
+export interface BulkAttendanceItem {
+  studentId: string;
+  status: AttendanceStatusType;
+  note?: string;
+}
+
+export interface BulkAttendanceInput {
+  attendances: BulkAttendanceItem[];
+}
+
+export interface StudentAttendanceRecord {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  lessonDate: string;
+  groupName: string | null;
+  status: AttendanceStatusType;
+  note?: string;
+  markedAt: string;
+}
+
+export interface StudentAttendanceResponse {
+  studentId: string;
+  from: string;
+  to: string;
+  records: StudentAttendanceRecord[];
+  attendancePercent: number;
+}
+
+export interface GroupAttendanceRecord {
+  studentId: string;
+  studentName: string;
+  lessonId: string;
+  lessonTitle: string;
+  lessonDate: string;
+  status: AttendanceStatusType;
+  note?: string;
+}
+
+export interface GroupAttendanceResponse {
+  groupId: string;
+  from: string;
+  to: string;
+  byStudent?: Record<string, GroupAttendanceRecord[]>;
+  byLesson?: Array<{ lessonId: string; lessonTitle: string; lessonDate: string; records: GroupAttendanceRecord[] }>;
+}
+
+// ============================================
+// PAYMENT TYPES
+// ============================================
+
+export interface StudentSubscription {
+  id: string;
+  studentId: string;
+  planId: string;
+  status: 'active' | 'cancelled' | 'paused';
+  startDate: string;
+  endDate?: string | null;
+  billingDay: number;
+  lastPaymentDate?: string | null;
+  nextPaymentDate: string;
+  orgId: string;
+  plan?: PaymentPlan;
+}
+
+export interface Payment {
+  id: string;
+  studentId: string;
+  subscriptionId?: string | null;
+  amount: number;
+  currency: string;
+  type: 'subscription_monthly' | 'private_lesson' | 'prorated' | 'refund';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  paymentMethod?: string | null;
+  reference?: string | null;
+  lessonIds?: string[];
+  dueDate: string;
+  paidDate?: string | null;
+  notes?: string | null;
+  student?: { id: string; fullName: string; email?: string };
+  subscription?: StudentSubscription & { plan?: PaymentPlan };
+}
+
+export interface LessonCreditsResponse {
+  studentId: string;
+  year: number;
+  month: number;
+  credits: {
+    lessonsIncluded: number;
+    lessonsUsed: number;
+    lessonsRemaining: number;
+    resetDate: string;
+  } | null;
+  plan: { id: string; name: string; type: string; lessonsPerMonth?: number } | null;
+  message?: string;
 }

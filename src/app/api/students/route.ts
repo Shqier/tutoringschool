@@ -56,9 +56,10 @@ export async function GET(request: NextRequest) {
     // Get total count
     const total = await prisma.student.count({ where });
 
-    // Get paginated students
+    // Get paginated students with plan
     const students = await prisma.student.findMany({
       where,
+      include: { plan: true },
       orderBy: { fullName: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse(parsed.error);
     }
 
-    const { fullName, email, phone, status, groupIds, balance, plan } = parsed.data;
+    const { fullName, email, phone, status, groupIds, grade, planId, paymentStatus } = parsed.data;
 
     // Check for duplicate email
     const existing = await prisma.student.findFirst({
@@ -105,11 +106,13 @@ export async function POST(request: NextRequest) {
         phone,
         status,
         groupIds,
+        grade,
+        planId,
+        paymentStatus: paymentStatus ?? 'active',
         attendancePercent: 100,
-        balance,
-        plan,
         orgId: user.orgId,
       },
+      include: { plan: true },
     });
 
     return jsonResponse(student, 201);

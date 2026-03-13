@@ -15,9 +15,14 @@ export async function cleanDatabase(): Promise<void> {
     await prisma.lesson.deleteMany({});
     await prisma.group.deleteMany({});
     await prisma.approval.deleteMany({});
+    await prisma.attendance.deleteMany({});
+    await prisma.lessonCredit.deleteMany({});
+    await prisma.payment.deleteMany({});
+    await prisma.studentSubscription.deleteMany({});
     await prisma.student.deleteMany({});
     await prisma.room.deleteMany({});
     await prisma.teacher.deleteMany({});
+    await prisma.paymentPlan.deleteMany({});
     await prisma.user.deleteMany({});
   } catch (error) {
     console.error('Error cleaning database:', error);
@@ -88,6 +93,27 @@ export async function createTestGroup(teacherId: string, overrides: any = {}) {
 }
 
 /**
+ * Create a test payment plan
+ */
+export async function createTestPaymentPlan(overrides: any = {}) {
+  const randomId = Math.random().toString(36).substring(7);
+  return await prisma.paymentPlan.create({
+    data: {
+      name: `Test Plan ${randomId}`,
+      tier: 'elementary',
+      type: 'subscription',
+      lessonsPerMonth: 8,
+      monthlyPrice: 550,
+      lessonPrice: null,
+      duration: 60,
+      orgId: DEFAULT_ORG_ID,
+      isActive: true,
+      ...overrides,
+    },
+  });
+}
+
+/**
  * Create a test student
  */
 export async function createTestStudent(overrides: any = {}) {
@@ -99,8 +125,8 @@ export async function createTestStudent(overrides: any = {}) {
       status: 'active',
       groupIds: [],
       attendancePercent: 0,
-      balance: 0,
-      plan: 'Monthly Basic',
+      grade: 5,
+      paymentStatus: 'active',
       enrolledDate: new Date(),
       orgId: DEFAULT_ORG_ID,
       ...overrides,

@@ -55,9 +55,9 @@ async function request<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
-      // Default dev headers - backend uses x-user-role, x-user-id, x-org-id
+      // Dev auth: use user_001 (seeded admin) so /api/auth/me returns real user
       'x-user-role': 'admin',
-      'x-user-id': 'user_default',
+      'x-user-id': 'user_001',
       'x-org-id': 'org_busala_default',
       ...headers,
     },
@@ -125,7 +125,12 @@ function buildQueryString(params: QueryParams): string {
 // API FUNCTIONS
 // ============================================
 
+import type { PaginatedResponse } from './types';
 import type {
+  PaymentPlan,
+  Payment as PaymentType,
+  StudentSubscription,
+  LessonCreditsResponse,
   LessonsQuery,
   LessonsResponse,
   Lesson,
@@ -134,12 +139,14 @@ import type {
   TeachersQuery,
   TeachersResponse,
   Teacher,
+  TeacherProfile,
   CreateTeacherInput,
   UpdateTeacherInput,
   GroupsQuery,
   GroupsResponse,
   Group,
   GroupDetailResponse,
+  GroupStatsResponse,
   CreateGroupInput,
   UpdateGroupInput,
   AssignStudentsInput,
@@ -163,6 +170,9 @@ import type {
   ScheduleResponse,
   DashboardStatsResponse,
   MeResponse,
+  SettingsProfile,
+  RolesResponse,
+  UserPreferencesResponse,
   SuccessResponse,
 } from './types';
 
@@ -171,19 +181,44 @@ import type {
 // ============================================
 
 export async function getMe(signal?: AbortSignal): Promise<MeResponse> {
-  // For now, return a mock user since we don't have auth implemented
-  // In production, this would call /api/auth/me
-  return {
-    user: {
-      id: 'user_001',
-      email: 'admin@busala.com',
-      name: 'Admin User',
-      role: 'admin',
-      orgId: 'org_busala_default',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  };
+  return request<MeResponse>('/auth/me', { signal });
+}
+
+export async function updateMe(
+  body: { name?: string; email?: string; phone?: string | null; avatarUrl?: string | null },
+  signal?: AbortSignal
+): Promise<MeResponse> {
+  return request<MeResponse>('/auth/me', { method: 'PATCH', body, signal });
+}
+
+export async function changePassword(
+  body: { currentPassword: string; newPassword: string; confirmPassword: string },
+  signal?: AbortSignal
+): Promise<{ success?: boolean }> {
+  return request<{ success?: boolean }>('/auth/change-password', { method: 'POST', body, signal });
+}
+
+// ============================================
+// SETTINGS & USER
+// ============================================
+
+export async function getSettingsProfile(signal?: AbortSignal): Promise<SettingsProfile & { orgId?: string }> {
+  return request<SettingsProfile & { orgId?: string }>('/settings/profile', { signal });
+}
+
+export async function getRoles(signal?: AbortSignal): Promise<RolesResponse> {
+  return request<RolesResponse>('/roles', { signal });
+}
+
+export async function getUserPreferences(signal?: AbortSignal): Promise<UserPreferencesResponse> {
+  return request<UserPreferencesResponse>('/user/preferences', { signal });
+}
+
+export async function updateUserPreferences(
+  body: { language?: string; timezone?: string; notifications?: Record<string, boolean> },
+  signal?: AbortSignal
+): Promise<UserPreferencesResponse> {
+  return request<UserPreferencesResponse>('/user/preferences', { method: 'PATCH', body, signal });
 }
 
 // ============================================
@@ -262,6 +297,23 @@ export async function getTeacher(
   return request<Teacher>(`/teachers/${id}`, { signal });
 }
 
+export async function getTeacherProfile(
+  id: string,
+  signal?: AbortSignal
+): Promise<TeacherProfile> {
+  return request<TeacherProfile>(`/teachers/${id}/profile`, { signal });
+}
+
+export async function getTeacherSchedule(
+  id: string,
+  startDate: string,
+  endDate: string,
+  signal?: AbortSignal
+): Promise<{ data: Lesson[] }> {
+  const qs = buildQueryString({ startDate, endDate });
+  return request<{ data: Lesson[] }>(`/teachers/${id}/schedule${qs}`, { signal });
+}
+
 export async function createTeacher(
   input: CreateTeacherInput,
   signal?: AbortSignal
@@ -312,6 +364,24 @@ export async function getGroup(
   signal?: AbortSignal
 ): Promise<GroupDetailResponse> {
   return request<GroupDetailResponse>(`/groups/${id}`, { signal });
+}
+
+export async function getGroupStats(
+  id: string,
+  signal?: AbortSignal
+): Promise<GroupStatsResponse> {
+  return request<GroupStatsResponse>(`/groups/${id}/stats`, { signal });
+}
+
+export async function removeGroupStudent(
+  groupId: string,
+  studentId: string,
+  signal?: AbortSignal
+): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`/groups/${groupId}/students/${studentId}`, {
+    method: 'DELETE',
+    signal,
+  });
 }
 
 export async function createGroup(
@@ -409,6 +479,70 @@ export async function deleteStudent(
     method: 'DELETE',
     signal,
   });
+}
+
+// ============================================
+// PAYMENT PLANS
+// ============================================
+
+export async function getPaymentPlans(
+  query?: { page?: number; limit?: number; type?: string; tier?: string },
+  signal?: AbortSignal
+): Promise<PaginatedResponse<PaymentPlan>> {
+  const qs = query ? buildQueryString(query as QueryParams) : '';
+  return request<PaginatedResponse<PaymentPlan>>(`/payment-plans${qs}`, { signal });
+}
+
+// ============================================
+// STUDENT SUBSCRIPTIONS
+// ============================================
+
+export async function getStudentSubscriptions(
+  studentId: string,
+  signal?: AbortSignal
+): Promise<StudentSubscription[]> {
+  return request<StudentSubscription[]>(`/students/${studentId}/subscriptions`, { signal });
+}
+
+// ============================================
+// PAYMENTS
+// ============================================
+
+export async function getPayments(
+  query?: { page?: number; limit?: number; studentId?: string; status?: string },
+  signal?: AbortSignal
+): Promise<PaginatedResponse<PaymentType>> {
+  const qs = query ? buildQueryString(query as QueryParams) : '';
+  return request<PaginatedResponse<PaymentType>>(`/payments${qs}`, { signal });
+}
+
+export async function getOverduePayments(
+  signal?: AbortSignal
+): Promise<PaymentType[]> {
+  return request<PaymentType[]>(`/payments/overdue`, { signal });
+}
+
+export async function recordPayment(
+  paymentId: string,
+  input: { paymentMethod: 'cash' | 'bank_transfer' | 'override'; paidDate?: string; reference?: string; notes?: string },
+  signal?: AbortSignal
+): Promise<PaymentType> {
+  return request<PaymentType>(`/payments/${paymentId}/record`, {
+    method: 'POST',
+    body: input,
+    signal,
+  });
+}
+
+// ============================================
+// LESSON CREDITS
+// ============================================
+
+export async function getLessonCredits(
+  studentId: string,
+  signal?: AbortSignal
+): Promise<LessonCreditsResponse> {
+  return request<LessonCreditsResponse>(`/lesson-credits/${studentId}/current`, { signal });
 }
 
 // ============================================
@@ -608,4 +742,150 @@ export async function getDashboardStats(
     roomsInUse: `${occupiedRooms}/${totalRooms}`,
     pendingApprovals: approvals.counts?.pending || approvals.pagination.total,
   };
+}
+
+// ============================================
+// AVAILABILITY
+// ============================================
+
+import type {
+  TeacherAvailability,
+  PendingConfirmationsResponse,
+  UpdateAvailabilityInput,
+} from './types';
+
+export async function getTeacherAvailability(
+  teacherId: string,
+  signal?: AbortSignal
+): Promise<TeacherAvailability> {
+  return request<TeacherAvailability>(`/teachers/${teacherId}/availability`, { signal });
+}
+
+export async function updateTeacherAvailability(
+  teacherId: string,
+  availability: UpdateAvailabilityInput,
+  signal?: AbortSignal
+): Promise<TeacherAvailability> {
+  return request<TeacherAvailability>(`/teachers/${teacherId}/availability`, {
+    method: 'PUT',
+    body: availability,
+    signal,
+  });
+}
+
+export async function confirmTeacherAvailability(
+  teacherId: string,
+  month?: number,
+  year?: number,
+  signal?: AbortSignal
+): Promise<TeacherAvailability> {
+  const params: Record<string, string> = {};
+  if (month !== undefined) params.month = String(month);
+  if (year !== undefined) params.year = String(year);
+  const qs = buildQueryString(params);
+  return request<TeacherAvailability>(`/teachers/${teacherId}/availability/confirm${qs}`, {
+    method: 'POST',
+    signal,
+  });
+}
+
+export async function getPendingConfirmations(
+  month?: number,
+  year?: number,
+  signal?: AbortSignal
+): Promise<PendingConfirmationsResponse> {
+  const params: Record<string, string> = {};
+  if (month !== undefined) params.month = String(month);
+  if (year !== undefined) params.year = String(year);
+  const qs = buildQueryString(params);
+  return request<PendingConfirmationsResponse>(`/teachers/availability/pending${qs}`, { signal });
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+import type { Notification, NotificationsResponse } from './types';
+
+export async function getNotifications(
+  limit?: number,
+  unreadOnly?: boolean,
+  signal?: AbortSignal
+): Promise<NotificationsResponse> {
+  const params: Record<string, string> = {};
+  if (limit !== undefined) params.limit = String(limit);
+  if (unreadOnly) params.unread = 'true';
+  const qs = buildQueryString(params);
+  return request<NotificationsResponse>(`/notifications${qs}`, { signal });
+}
+
+export async function getUnreadNotificationCount(
+  signal?: AbortSignal
+): Promise<{ count: number }> {
+  return request<{ count: number }>('/notifications/unread-count', { signal });
+}
+
+export async function markNotificationAsRead(
+  id: string,
+  signal?: AbortSignal
+): Promise<{ success: boolean; notification: Notification }> {
+  return request<{ success: boolean; notification: Notification }>(`/notifications/${id}`, {
+    method: 'PATCH',
+    signal,
+  });
+}
+
+export async function markAllNotificationsAsRead(
+  signal?: AbortSignal
+): Promise<{ success: boolean; markedAsRead: number }> {
+  return request<{ success: boolean; markedAsRead: number }>('/notifications/read-all', {
+    method: 'PATCH',
+    signal,
+  });
+}
+
+// ============================================
+// ATTENDANCE
+// ============================================
+
+import type { LessonAttendance, BulkAttendanceInput, StudentAttendanceResponse, GroupAttendanceResponse } from './types';
+
+export async function getLessonAttendance(
+  lessonId: string,
+  signal?: AbortSignal
+): Promise<{ lessonId: string; lesson?: LessonAttendance['lesson']; attendances: LessonAttendance['attendances']; stats: LessonAttendance['stats'] }> {
+  return request<{ lessonId: string; lesson?: LessonAttendance['lesson']; attendances: LessonAttendance['attendances']; stats: LessonAttendance['stats'] }>(
+    `/lessons/${lessonId}/attendance`,
+    { signal }
+  );
+}
+
+export async function saveLessonAttendance(
+  lessonId: string,
+  input: BulkAttendanceInput,
+  signal?: AbortSignal
+): Promise<{ success: boolean; lessonId: string }> {
+  return request<{ success: boolean; lessonId: string }>(`/lessons/${lessonId}/attendance`, {
+    method: 'POST',
+    body: input,
+    signal,
+  });
+}
+
+export async function getStudentAttendance(
+  studentId: string,
+  params?: { from?: string; to?: string },
+  signal?: AbortSignal
+): Promise<StudentAttendanceResponse> {
+  const qs = params ? buildQueryString(params as QueryParams) : '';
+  return request<StudentAttendanceResponse>(`/students/${studentId}/attendance${qs}`, { signal });
+}
+
+export async function getGroupAttendance(
+  groupId: string,
+  params?: { from?: string; to?: string; studentId?: string; groupBy?: 'student' | 'lesson' },
+  signal?: AbortSignal
+): Promise<GroupAttendanceResponse> {
+  const qs = params ? buildQueryString(params as QueryParams) : '';
+  return request<GroupAttendanceResponse>(`/groups/${groupId}/attendance${qs}`, { signal });
 }

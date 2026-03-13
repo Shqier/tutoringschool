@@ -65,11 +65,68 @@ export const createStudentSchema = z.object({
   phone: z.string().optional(),
   status: z.enum(['active', 'at_risk', 'inactive']).default('active'),
   groupIds: z.array(z.string()).default([]),
-  balance: z.number().default(0),
-  plan: z.string().default('Monthly Basic'),
+  grade: z.number().int().min(1).max(12).optional(),
+  planId: z.string().uuid().optional().nullable(),
+  paymentStatus: z.enum(['active', 'overdue', 'cancelled', 'suspended']).default('active'),
+  notes: z.string().optional(),
 });
 
 export const updateStudentSchema = createStudentSchema.partial();
+
+// ============================================
+// PAYMENT PLAN
+// ============================================
+export const createPaymentPlanSchema = z.object({
+  name: z.string().min(2).max(100),
+  tier: z.enum(['elementary', 'high_school']),
+  type: z.enum(['subscription', 'pay_as_you_go']),
+  lessonsPerMonth: z.number().int().min(1).max(31).optional().nullable(),
+  monthlyPrice: z.number().min(0).optional().nullable(),
+  lessonPrice: z.number().min(0).optional().nullable(),
+  duration: z.number().int().min(1).max(180).default(60),
+});
+
+export const updatePaymentPlanSchema = createPaymentPlanSchema.partial();
+
+// ============================================
+// STUDENT SUBSCRIPTION
+// ============================================
+export const createStudentSubscriptionSchema = z.object({
+  studentId: z.string().uuid(),
+  planId: z.string().uuid(),
+  status: z.enum(['active', 'cancelled', 'paused']).default('active'),
+  startDate: z.string().datetime(),
+  billingDay: z.number().int().min(1).max(31).default(1),
+});
+
+export const updateStudentSubscriptionSchema = createStudentSubscriptionSchema.partial();
+
+// ============================================
+// PAYMENT
+// ============================================
+export const createPaymentSchema = z.object({
+  studentId: z.string().uuid(),
+  subscriptionId: z.string().uuid().optional().nullable(),
+  amount: z.number().positive(),
+  currency: z.string().default('ILS'),
+  type: z.enum(['subscription_monthly', 'private_lesson', 'prorated', 'refund']),
+  status: z.enum(['pending', 'completed', 'failed', 'refunded']).default('pending'),
+  paymentMethod: z.string().optional(),
+  reference: z.string().optional(),
+  lessonIds: z.array(z.string()).default([]),
+  dueDate: z.string().datetime(),
+  paidDate: z.string().datetime().optional().nullable(),
+  notes: z.string().optional(),
+});
+
+export const updatePaymentSchema = createPaymentSchema.partial();
+
+export const recordPaymentSchema = z.object({
+  paymentMethod: z.enum(['cash', 'bank_transfer', 'override']),
+  paidDate: z.string().datetime().optional(),
+  reference: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 // ============================================
 // ROOM
@@ -189,11 +246,39 @@ export const checkConflictsSchema = z.object({
   excludeLessonId: z.string().min(1).optional(),
 });
 
+// ============================================
+// ATTENDANCE
+// ============================================
+export const attendanceStatusSchema = z.enum(['present', 'absent', 'late', 'excused']);
+
+export const bulkAttendanceItemSchema = z.object({
+  studentId: z.string().min(1),
+  status: attendanceStatusSchema,
+  note: z.string().max(500).optional(),
+}).refine(
+  (data) => {
+    if (data.status === 'excused') return !!data.note?.trim();
+    return true;
+  },
+  { message: 'Note is required when status is excused' }
+);
+
+export const bulkAttendanceSchema = z.object({
+  attendances: z.array(bulkAttendanceItemSchema).min(1),
+});
+
 // Type exports
 export type CreateTeacherInput = z.infer<typeof createTeacherSchema>;
 export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>;
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;
+export type CreatePaymentPlanInput = z.infer<typeof createPaymentPlanSchema>;
+export type UpdatePaymentPlanInput = z.infer<typeof updatePaymentPlanSchema>;
+export type CreateStudentSubscriptionInput = z.infer<typeof createStudentSubscriptionSchema>;
+export type UpdateStudentSubscriptionInput = z.infer<typeof updateStudentSubscriptionSchema>;
+export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
+export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type UpdateRoomInput = z.infer<typeof updateRoomSchema>;
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Eye, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createStudentSchema, type CreateStudentFormData } from '@/lib/validations';
-import { useCreateStudent, useUpdateStudent } from '@/lib/api/hooks';
+import { useCreateStudent, useUpdateStudent, usePaymentPlans } from '@/lib/api/hooks';
 import type { Student } from '@/lib/api/types';
 import type { DialogMode } from '@/hooks/useEntityDialog';
 
@@ -51,6 +51,8 @@ export function StudentDialog({
 
   const { mutate: createStudent, isLoading: createLoading } = useCreateStudent();
   const { mutate: updateStudent, isLoading: updateLoading } = useUpdateStudent();
+  const { data: plansData } = usePaymentPlans();
+  const plans = plansData?.plans ?? [];
   const isLoading = createLoading || updateLoading;
 
   const {
@@ -60,15 +62,16 @@ export function StudentDialog({
     reset,
     formState: { errors },
   } = useForm<CreateStudentFormData>({
-    resolver: zodResolver(createStudentSchema),
+    resolver: zodResolver(createStudentSchema) as Resolver<CreateStudentFormData>,
     defaultValues: {
       fullName: '',
       email: '',
       phone: '',
       status: 'active',
       groupIds: [],
-      balance: 0,
-      plan: 'Monthly Basic',
+      grade: undefined,
+      planId: null,
+      paymentStatus: 'active',
     },
   });
 
@@ -82,8 +85,9 @@ export function StudentDialog({
           phone: entity.phone || '',
           status: entity.status,
           groupIds: entity.groupIds || [],
-          balance: entity.balance || 0,
-          plan: entity.plan || 'Monthly Basic',
+          grade: entity.grade ?? undefined,
+          planId: entity.planId ?? null,
+          paymentStatus: entity.paymentStatus || 'active',
         });
       } else {
         reset({
@@ -92,8 +96,9 @@ export function StudentDialog({
           phone: '',
           status: 'active',
           groupIds: [],
-          balance: 0,
-          plan: 'Monthly Basic',
+          grade: undefined,
+          planId: null,
+          paymentStatus: 'active',
         });
       }
     }
@@ -107,8 +112,9 @@ export function StudentDialog({
         phone: data.phone || undefined,
         status: data.status,
         groupIds: data.groupIds || [],
-        balance: data.balance,
-        plan: data.plan,
+        grade: data.grade ?? undefined,
+        planId: data.planId ?? undefined,
+        paymentStatus: data.paymentStatus,
       };
 
       if (isEditing && entity) {
@@ -219,7 +225,7 @@ export function StudentDialog({
             )}
           </div>
 
-          {/* Status and Balance Row */}
+          {/* Status, Grade, Plan Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
@@ -254,52 +260,104 @@ export function StudentDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="balance">Balance ($)</Label>
+              <Label htmlFor="grade">Grade (1-12)</Label>
               {isViewing ? (
-                <div className={`px-3 py-2 rounded-md bg-white/5 ${
-                  (entity?.balance || 0) < 0 ? 'text-red-400' :
-                  (entity?.balance || 0) === 0 ? 'text-amber-400' :
-                  'text-emerald-400'
-                }`}>
-                  ${entity?.balance || 0}
+                <div className="px-3 py-2 rounded-md bg-white/5 text-white">
+                  {entity?.grade ?? 'N/A'}
                 </div>
               ) : (
-                <>
-                  <Input
-                    id="balance"
-                    type="number"
-                    step="0.01"
-                    {...register('balance', { valueAsNumber: true })}
-                    className="bg-white/5 border-white/10 text-white focus:border-[#F5A623]/50"
-                  />
-                  {errors.balance && (
-                    <p className="text-xs text-red-400">{errors.balance.message}</p>
+                <Controller
+                  name="grade"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value != null ? String(field.value) : ''}
+                      onValueChange={(v) => field.onChange(v ? parseInt(v, 10) : undefined)}
+                    >
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[#F5A623]/50">
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#14171C] border-white/10">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                          <SelectItem key={g} value={String(g)} className="text-white/80 focus:bg-white/5 focus:text-white">
+                            {g}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
-                </>
+                />
               )}
             </div>
           </div>
 
-          {/* Plan */}
-          <div className="space-y-2">
-            <Label htmlFor="plan">Plan</Label>
-            {isViewing ? (
-              <div className="px-3 py-2 rounded-md bg-white/5 text-white">
-                {entity?.plan || 'N/A'}
-              </div>
-            ) : (
-              <>
-                <Input
-                  id="plan"
-                  placeholder="e.g., Monthly Basic"
-                  {...register('plan')}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-[#F5A623]/50"
+          {/* Plan and Payment Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Plan</Label>
+              {isViewing ? (
+                <div className="px-3 py-2 rounded-md bg-white/5 text-white">
+                  {entity?.plan?.name ?? 'N/A'}
+                </div>
+              ) : (
+                <Controller
+                  name="planId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ''}
+                      onValueChange={(v) => field.onChange(v || null)}
+                    >
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[#F5A623]/50">
+                        <SelectValue placeholder="Select plan" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#14171C] border-white/10">
+                        {plans.map((p) => (
+                          <SelectItem key={p.id} value={p.id} className="text-white/80 focus:bg-white/5 focus:text-white">
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
-                {errors.plan && (
-                  <p className="text-xs text-red-400">{errors.plan.message}</p>
-                )}
-              </>
-            )}
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Payment Status</Label>
+              {isViewing ? (
+                <div className="px-3 py-2 rounded-md bg-white/5 text-white capitalize">
+                  {entity?.paymentStatus ?? 'N/A'}
+                </div>
+              ) : (
+                <Controller
+                  name="paymentStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[#F5A623]/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#14171C] border-white/10">
+                        <SelectItem value="active" className="text-white/80 focus:bg-white/5 focus:text-white">
+                          Active
+                        </SelectItem>
+                        <SelectItem value="overdue" className="text-white/80 focus:bg-white/5 focus:text-white">
+                          Overdue
+                        </SelectItem>
+                        <SelectItem value="suspended" className="text-white/80 focus:bg-white/5 focus:text-white">
+                          Suspended
+                        </SelectItem>
+                        <SelectItem value="cancelled" className="text-white/80 focus:bg-white/5 focus:text-white">
+                          Cancelled
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              )}
+            </div>
           </div>
 
           {/* Footer Buttons */}

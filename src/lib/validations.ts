@@ -33,8 +33,9 @@ export const createStudentSchema = z.object({
   phone: phoneSchema,
   status: z.enum(['active', 'at_risk', 'inactive']).default('active'),
   groupIds: z.array(z.string()).default([]),
-  balance: z.number().default(0),
-  plan: z.string().default('Monthly Basic'),
+  grade: z.number().int().min(1, 'Grade must be 1-12').max(12).optional().nullable(),
+  planId: z.string().uuid().optional().nullable(),
+  paymentStatus: z.enum(['active', 'overdue', 'cancelled', 'suspended']).default('active'),
 });
 
 export const updateStudentSchema = createStudentSchema.partial();

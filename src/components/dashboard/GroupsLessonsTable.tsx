@@ -43,7 +43,7 @@ function GroupRow({ group }: GroupRowProps) {
       {/* Students Count */}
       <div className="flex items-center gap-1.5 text-busala-text-subtle w-20">
         <Users className="h-3.5 w-3.5" />
-        <span className="text-xs">{group.studentsCount || group.studentIds.length} students</span>
+        <span className="text-xs">{group.studentCount ?? 0} students</span>
       </div>
 
       {/* Schedule */}

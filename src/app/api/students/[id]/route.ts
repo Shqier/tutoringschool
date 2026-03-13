@@ -30,7 +30,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!authorized) return authError;
 
     const { id } = await params;
-    const student = await prisma.student.findUnique({ where: { id } });
+    const student = await prisma.student.findUnique({
+      where: { id },
+      include: { plan: true },
+    });
 
     if (!student) {
       return errorResponse('NOT_FOUND', 'Student not found', 404);
@@ -88,6 +91,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updated = await prisma.student.update({
       where: { id },
       data: parsed.data,
+      include: { plan: true },
     });
 
     return jsonResponse(updated);
@@ -121,6 +125,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const updated = await prisma.student.update({
       where: { id },
       data: { status: 'inactive' },
+      include: { plan: true },
     });
 
     return jsonResponse({ success: true, student: updated });

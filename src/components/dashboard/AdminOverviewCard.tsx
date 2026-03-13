@@ -11,8 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatMiniCard } from './StatMiniCard';
-import { currentUser } from '@/data/mock-data';
-import { useTeachers, useStudents, useGroups, useLessons, useApprovals } from '@/lib/api/hooks';
+import { useTeachers, useStudents, useGroups, useLessons, useApprovals, useMe } from '@/lib/api/hooks';
 import type { StatCard } from '@/types/dashboard';
 
 function StatsSkeleton() {
@@ -32,13 +31,14 @@ export function AdminOverviewCard() {
   const today = new Date().toISOString().split('T')[0];
 
   // Fetch data from all endpoints
+  const { data: meData, isLoading: loadingMe } = useMe();
   const { data: teachersData, isLoading: loadingTeachers } = useTeachers({ status: 'active' });
   const { data: studentsData, isLoading: loadingStudents } = useStudents();
   const { data: groupsData, isLoading: loadingGroups } = useGroups();
   const { data: lessonsData, isLoading: loadingLessons } = useLessons({ date: today });
   const { data: approvalsData, isLoading: loadingApprovals } = useApprovals({ status: 'pending' });
 
-  // Calculate stats from API responses
+  const currentUser = meData?.user;
   const isLoading = loadingTeachers || loadingStudents || loadingGroups || loadingLessons || loadingApprovals;
 
   // Create stat cards
@@ -85,15 +85,19 @@ export function AdminOverviewCard() {
       <div className="flex items-start justify-between mb-6">
         {/* User Info */}
         <div className="flex items-center gap-4">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-            <AvatarFallback className="bg-muted text-foreground text-lg">
-              {currentUser.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          {loadingMe ? (
+            <Skeleton className="h-12 w-12 rounded-full" />
+          ) : (
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={undefined} alt={currentUser?.name} />
+              <AvatarFallback className="bg-muted text-foreground text-lg">
+                {currentUser?.name?.charAt(0).toUpperCase() ?? 'U'}
+              </AvatarFallback>
+            </Avatar>
+          )}
           <div>
             <h2 className="text-xl font-semibold text-busala-text-primary">
-              Hello, {currentUser.name}
+              {loadingMe ? <Skeleton className="h-6 w-32" /> : `Hello, ${currentUser?.name ?? 'User'}`}
             </h2>
             <p className="text-sm text-busala-text-subtle">
               Welcome back to your dashboard

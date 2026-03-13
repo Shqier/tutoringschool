@@ -18,6 +18,8 @@ model User {
   name      String
   role      UserRole
   orgId     String
+  avatarUrl String?
+  phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -43,8 +45,19 @@ model Teacher {
   phone                   String?
   subjects                String[]
   status                  TeacherStatus
-  weeklyAvailability      Json               @default("[]") // WeeklyAvailability[] - Array of {dayOfWeek, startTime, endTime}
-  availabilityExceptions  Json               @default("[]") // AvailabilityException[] - Array of {startDate, endDate, isAllDay, type, reason}
+  
+  // Availability - enhanced JSON structure
+  // [{"day": "monday", "slots": [{"start": "14:00", "end": "18:00"}]}]
+  weeklyAvailability      Json               @default("[]")
+  
+  // Monthly confirmation tracking
+  availabilityConfirmedAt DateTime?
+  availabilityConfirmedForMonth Int?
+  availabilityConfirmedForYear  Int?
+  availabilityStatus      AvailabilityStatus @default(pending)
+  
+  // Legacy fields (for backward compatibility)
+  availabilityExceptions  Json               @default("[]")
   hoursThisWeek           Float              @default(0)
   maxHours                Float              @default(25)
   orgId                   String
@@ -59,6 +72,7 @@ model Teacher {
   @@index([orgId])
   @@index([status])
   @@index([email])
+  @@index([availabilityStatus])
   @@index([orgId, id]) // Composite for availability queries
   @@map("teachers")
 }
@@ -66,6 +80,152 @@ model Teacher {
 enum TeacherStatus {
   active
   inactive
+}
+
+enum AvailabilityStatus {
+  confirmed
+  pending
+  updated
+}
+
+// ============================================
+// PAYMENT PLAN MODEL (master plans - 6 seeded plans)
+// ============================================
+model PaymentPlan {
+  id             String         @id @default(uuid())
+  name           String         // "Group 8 - Elementary", "Private - High School"
+  tier           PlanTier       // elementary (1-9) | high_school (10-12)
+  type           PlanType       // subscription | pay_as_you_go
+  lessonsPerMonth Int?          // 8, 12, or null for pay-as-you-go
+  monthlyPrice   Float?         // null for pay-as-you-go
+  lessonPrice    Float?         // null for subscription, price per private lesson
+  duration       Int            @default(60) // minutes
+  orgId          String
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  subscriptions  StudentSubscription[]
+  students       Student[]      @relation("StudentActivePlan")
+
+  @@index([orgId])
+  @@index([orgId, type])
+  @@map("payment_plans")
+}
+
+enum PlanTier {
+  elementary   // grades 1-9
+  high_school  // grades 10-12
+}
+
+enum PlanType {
+  subscription
+  pay_as_you_go
+}
+
+// ============================================
+// STUDENT SUBSCRIPTION MODEL
+// ============================================
+model StudentSubscription {
+  id               String               @id @default(uuid())
+  studentId        String
+  planId           String
+  status           SubscriptionStatus   @default(active)
+  startDate        DateTime
+  endDate          DateTime?
+  billingDay       Int                  // 1-31, day of month to charge
+  lastPaymentDate  DateTime?
+  nextPaymentDate  DateTime
+  orgId            String
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  student          Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  plan             PaymentPlan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments         Payment[]
+  lessonCredits    LessonCredit[]
+
+  @@index([studentId])
+  @@index([orgId])
+  @@index([orgId, status])
+  @@map("student_subscriptions")
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  paused
+}
+
+// ============================================
+// PAYMENT MODEL
+// ============================================
+model Payment {
+  id             String         @id @default(uuid())
+  studentId      String
+  subscriptionId String?
+  amount         Float
+  currency       String         @default("ILS")
+  type           PaymentType
+  status         PaymentStatus  @default(pending)
+  paymentMethod  String?        // cash, bank_transfer, etc.
+  reference      String?
+  lessonIds      String[]       // for pay-as-you-go, which lessons this covers
+  dueDate        DateTime
+  paidDate       DateTime?
+  notes          String?
+  orgId          String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subscription   StudentSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([dueDate])
+  @@map("payments")
+}
+
+enum PaymentType {
+  subscription_monthly
+  private_lesson
+  prorated
+  refund
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+// ============================================
+// LESSON CREDIT MODEL (track monthly usage)
+// ============================================
+model LessonCredit {
+  id               String               @id @default(uuid())
+  studentId        String
+  subscriptionId   String
+  year             Int
+  month            Int                  // 1-12
+  lessonsIncluded  Int
+  lessonsUsed      Int                  @default(0)
+  lessonsRemaining Int                  // computed: lessonsIncluded - lessonsUsed
+  resetDate        DateTime             // first day of next month
+  orgId            String
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  student          Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subscription     StudentSubscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, year, month])
+  @@index([studentId])
+  @@index([orgId])
+  @@map("lesson_credits")
 }
 
 // ============================================
@@ -77,23 +237,38 @@ model Student {
   email             String
   phone             String?
   status            StudentStatus
+  grade             Int?          // 1-12, determines pricing tier
+  planId            String?       // foreign key to active plan (null if pay-as-you-go only)
+  paymentStatus     PaymentStatusEnum @default(active)
   groupIds          String[]
   attendancePercent Float         @default(0)
-  balance           Float         @default(0)
-  plan              String        @default("Monthly Basic")
   enrolledDate      DateTime      @default(now())
+  notes             String?
   orgId             String
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   // Relations
+  plan              PaymentPlan?  @relation("StudentActivePlan", fields: [planId], references: [id], onDelete: SetNull)
   lessons           Lesson[]      @relation("StudentLessons")
+  attendances       Attendance[]
+  subscriptions     StudentSubscription[]
+  payments          Payment[]
+  lessonCredits     LessonCredit[]
 
   @@unique([email, orgId])
   @@index([orgId])
   @@index([status])
   @@index([email])
+  @@index([planId])
   @@map("students")
+}
+
+enum PaymentStatusEnum {
+  active
+  overdue
+  cancelled
+  suspended
 }
 
 enum StudentStatus {
@@ -182,6 +357,7 @@ model Lesson {
   room      Room?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
   group     Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
   student   Student?     @relation("StudentLessons", fields: [studentId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
 
   @@index([orgId])
   @@index([teacherId])
@@ -205,6 +381,36 @@ enum LessonStatus {
   in_progress
   completed
   cancelled
+}
+
+// ============================================
+// ATTENDANCE MODEL
+// ============================================
+model Attendance {
+  id          String           @id @default(uuid())
+  lessonId    String
+  studentId   String
+  status      AttendanceStatus  @default(absent)
+  markedById  String
+  markedAt    DateTime         @default(now())
+  note        String?
+  orgId       String
+
+  lesson      Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, studentId])
+  @@index([orgId])
+  @@index([lessonId])
+  @@index([studentId])
+  @@map("attendance")
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
 }
 
 // ============================================
@@ -250,4 +456,51 @@ enum Priority {
   low
   medium
   high
+}
+
+// ============================================
+// NOTIFICATION MODEL (for in-app notifications)
+// ============================================
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   // Target user
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?    // Additional payload
+
+  readAt      DateTime?
+  actionUrl   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  availability_confirmation
+  approval_request
+  approval_resolved
+  lesson_reminder
+  payment_due
+  system
+}
+
+// ============================================
+// USER PREFERENCES MODEL (for language, timezone)
+// ============================================
+model UserPreferences {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  language      String   @default("en") // en, he, ar
+  timezone      String   @default("Asia/Jerusalem")
+  notifications Json?    // { email, sms, lessonReminders, approvalRequests } booleans
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("user_preferences")
 }

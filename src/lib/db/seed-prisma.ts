@@ -29,7 +29,23 @@ export async function seedDatabase(): Promise<void> {
 
   console.log('[Busala] Starting database seed with Prisma...');
 
-  // Check if already seeded
+  // Always seed payment plans if missing (e.g. after migration)
+  const existingPlans = await prisma.paymentPlan.count();
+  if (existingPlans === 0) {
+    await prisma.paymentPlan.createMany({
+      data: [
+        { id: 'plan_001', name: 'Group 8 - Elementary', tier: 'elementary', type: 'subscription', lessonsPerMonth: 8, monthlyPrice: 550, lessonPrice: null, duration: 60, orgId: DEFAULT_ORG_ID },
+        { id: 'plan_002', name: 'Group 12 - Elementary', tier: 'elementary', type: 'subscription', lessonsPerMonth: 12, monthlyPrice: 850, lessonPrice: null, duration: 60, orgId: DEFAULT_ORG_ID },
+        { id: 'plan_003', name: 'Private - Elementary', tier: 'elementary', type: 'pay_as_you_go', lessonsPerMonth: null, monthlyPrice: null, lessonPrice: 100, duration: 60, orgId: DEFAULT_ORG_ID },
+        { id: 'plan_004', name: 'Group 8 - High School', tier: 'high_school', type: 'subscription', lessonsPerMonth: 8, monthlyPrice: 750, lessonPrice: null, duration: 60, orgId: DEFAULT_ORG_ID },
+        { id: 'plan_005', name: 'Group 12 - High School', tier: 'high_school', type: 'subscription', lessonsPerMonth: 12, monthlyPrice: 950, lessonPrice: null, duration: 60, orgId: DEFAULT_ORG_ID },
+        { id: 'plan_006', name: 'Private - High School', tier: 'high_school', type: 'pay_as_you_go', lessonsPerMonth: null, monthlyPrice: null, lessonPrice: 120, duration: 60, orgId: DEFAULT_ORG_ID },
+      ],
+    });
+    console.log('[Busala] Seeded 6 payment plans');
+  }
+
+  // Check if already seeded (teachers, students, etc.)
   const existingTeachers = await prisma.teacher.count();
   if (existingTeachers > 0) {
     console.log('[Busala] Database already seeded, skipping...');
@@ -226,11 +242,17 @@ export async function seedDatabase(): Promise<void> {
       'Rami Saeed', 'Dina Farouk', 'Sami Hadid', 'Yasmin Taha',
     ];
 
+    const planIds = ['plan_001', 'plan_002', 'plan_003', 'plan_004', 'plan_005', 'plan_006'];
+    const paymentStatuses: Array<'active' | 'overdue' | 'cancelled' | 'suspended'> = ['active', 'active', 'active', 'overdue', 'active'];
+
     const studentData: Prisma.StudentCreateManyInput[] = studentNames.map((name, index) => {
       const id = `student_${String(index + 1).padStart(3, '0')}`;
       const firstName = name.split(' ')[0].toLowerCase();
       const statuses: Array<'active' | 'at_risk' | 'inactive'> = ['active', 'active', 'active', 'at_risk', 'inactive'];
-      const plans = ['Monthly Basic', 'Monthly Premium', 'Annual Premium', 'Pay-as-you-go'];
+      // Grade 1-12: grades 1-9 = elementary, 10-12 = high school
+      const grade = 1 + (index % 12);
+      const planId = planIds[index % planIds.length];
+      const paymentStatus = paymentStatuses[index % paymentStatuses.length];
 
       // Assign students to groups based on seed groups
       const groupIds: string[] = [];
@@ -257,10 +279,11 @@ export async function seedDatabase(): Promise<void> {
         email: `${firstName}@example.com`,
         phone: `+1 234 567 ${1000 + index}`,
         status: statuses[index % statuses.length],
+        grade,
+        planId,
+        paymentStatus,
         groupIds,
         attendancePercent: 60 + Math.floor(Math.random() * 40),
-        balance: Math.floor(Math.random() * 500) - 50,
-        plan: plans[index % plans.length],
         enrolledDate,
         orgId: DEFAULT_ORG_ID,
       };

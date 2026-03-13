@@ -9,15 +9,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ApiClientError, ApiConflictError } from './client';
 import * as api from './client';
+import type { PaginatedResponse } from './types';
 import type {
   LessonsQuery,
   LessonsResponse,
   TeachersQuery,
   TeachersResponse,
   Teacher,
+  TeacherProfile,
   GroupsQuery,
   GroupsResponse,
   GroupDetailResponse,
+  GroupStatsResponse,
   StudentsQuery,
   StudentsResponse,
   Student,
@@ -103,6 +106,7 @@ function useQuery<T>(
 
 interface UseMutationResult<TInput, TOutput> {
   mutate: (input: TInput) => Promise<TOutput>;
+  mutateAsync: (input: TInput) => Promise<TOutput>;
   isLoading: boolean;
   error: ApiClientError | ApiConflictError | null;
   reset: () => void;
@@ -155,7 +159,7 @@ function useMutation<TInput, TOutput>(
     };
   }, []);
 
-  return { mutate, isLoading, error, reset };
+  return { mutate, mutateAsync: mutate, isLoading, error, reset };
 }
 
 // ============================================
@@ -273,6 +277,29 @@ export function useTeacher(id: string | null) {
   );
 }
 
+export function useTeacherProfile(id: string | null) {
+  return useQuery<TeacherProfile>(
+    (signal) => {
+      if (!id) return Promise.reject(new Error('No ID provided'));
+      return api.getTeacherProfile(id, signal);
+    },
+    [id]
+  );
+}
+
+export function useTeacherSchedule(
+  id: string | null,
+  range: { startDate: string; endDate: string } | null
+) {
+  return useQuery<{ data: import('./types').Lesson[] }>(
+    (signal) => {
+      if (!id || !range) return Promise.reject(new Error('No ID or range provided'));
+      return api.getTeacherSchedule(id, range.startDate, range.endDate, signal);
+    },
+    [id, range?.startDate, range?.endDate]
+  );
+}
+
 export function useCreateTeacher() {
   return useMutation(api.createTeacher);
 }
@@ -315,6 +342,16 @@ export function useGroup(id: string | null) {
   );
 }
 
+export function useGroupStats(id: string | null) {
+  return useQuery<GroupStatsResponse>(
+    (signal) => {
+      if (!id) return Promise.reject(new Error('No ID provided'));
+      return api.getGroupStats(id, signal);
+    },
+    [id]
+  );
+}
+
 export function useCreateGroup() {
   return useMutation(api.createGroup);
 }
@@ -330,6 +367,13 @@ export function useAssignStudents() {
   return useMutation(
     (params: { id: string; studentIds: string[] }, signal: AbortSignal) =>
       api.assignStudentsToGroup(params.id, { studentIds: params.studentIds }, signal)
+  );
+}
+
+export function useRemoveGroupStudent() {
+  return useMutation(
+    (params: { groupId: string; studentId: string }, signal: AbortSignal) =>
+      api.removeGroupStudent(params.groupId, params.studentId, signal)
   );
 }
 
@@ -375,8 +419,88 @@ export function useUpdateStudent() {
   );
 }
 
+export function useUpdateStudentNotes() {
+  return useMutation(
+    (params: { id: string; notes: string | null }, signal: AbortSignal) =>
+      api.updateStudent(params.id, { notes: params.notes ?? undefined }, signal)
+  );
+}
+
 export function useDeleteStudent() {
   return useMutation((id: string, signal: AbortSignal) => api.deleteStudent(id, signal));
+}
+
+// Payment Plans
+export function usePaymentPlans(query?: { type?: string; tier?: string }) {
+  const result = useQuery<PaginatedResponse<import('./types').PaymentPlan>>(
+    (signal) => api.getPaymentPlans({ ...query, limit: 100 }, signal),
+    [JSON.stringify(query)]
+  );
+  const normalizedData = result.data
+    ? { plans: result.data.data, total: result.data.pagination.total }
+    : null;
+  return { ...result, data: normalizedData };
+}
+
+// Student Subscriptions
+export function useStudentSubscriptions(studentId: string | null) {
+  return useQuery<import('./types').StudentSubscription[]>(
+    (signal) => {
+      if (!studentId) return Promise.reject(new Error('No student ID'));
+      return api.getStudentSubscriptions(studentId, signal);
+    },
+    [studentId]
+  );
+}
+
+// Payments
+export function usePayments(query?: { studentId?: string; status?: string; page?: number }) {
+  const result = useQuery<PaginatedResponse<import('./types').Payment>>(
+    (signal) => api.getPayments(query, signal),
+    [JSON.stringify(query)]
+  );
+  const normalizedData = result.data
+    ? { payments: result.data.data, pagination: result.data.pagination, total: result.data.pagination.total }
+    : null;
+  return { ...result, data: normalizedData };
+}
+
+export function useOverduePayments() {
+  return useQuery<import('./types').Payment[]>(
+    (signal) => api.getOverduePayments(signal),
+    []
+  );
+}
+
+export function useRecordPayment() {
+  return useMutation(
+    (
+      params: {
+        paymentId: string;
+        paymentMethod: 'cash' | 'bank_transfer' | 'override';
+        paidDate?: string;
+        reference?: string;
+        notes?: string;
+      },
+      signal: AbortSignal
+    ) => api.recordPayment(params.paymentId, {
+      paymentMethod: params.paymentMethod,
+      paidDate: params.paidDate,
+      reference: params.reference,
+      notes: params.notes,
+    }, signal)
+  );
+}
+
+// Lesson Credits
+export function useLessonCredits(studentId: string | null) {
+  return useQuery<import('./types').LessonCreditsResponse>(
+    (signal) => {
+      if (!studentId) return Promise.reject(new Error('No student ID'));
+      return api.getLessonCredits(studentId, signal);
+    },
+    [studentId]
+  );
 }
 
 // Rooms
@@ -448,5 +572,169 @@ export function useScheduling(query?: SchedulingQuery) {
   return useQuery<SchedulingResponse>(
     (signal) => api.getScheduling(query, signal),
     [JSON.stringify(query)]
+  );
+}
+
+// ============================================
+// AVAILABILITY HOOKS
+// ============================================
+
+import type {
+  TeacherAvailability,
+  PendingConfirmationsResponse,
+  UpdateAvailabilityInput,
+} from './types';
+
+export function useTeacherAvailability(teacherId: string) {
+  return useQuery<TeacherAvailability>(
+    (signal) => api.getTeacherAvailability(teacherId, signal),
+    [teacherId]
+  );
+}
+
+export function useUpdateTeacherAvailability() {
+  return useMutation(
+    (params: { teacherId: string; availability: UpdateAvailabilityInput }, signal: AbortSignal) =>
+      api.updateTeacherAvailability(params.teacherId, params.availability, signal)
+  );
+}
+
+export function useConfirmTeacherAvailability() {
+  return useMutation(
+    (params: { teacherId: string; month?: number; year?: number }, signal: AbortSignal) =>
+      api.confirmTeacherAvailability(params.teacherId, params.month, params.year, signal)
+  );
+}
+
+export function usePendingConfirmations(month?: number, year?: number) {
+  return useQuery<PendingConfirmationsResponse>(
+    (signal) => api.getPendingConfirmations(month, year, signal),
+    [month, year]
+  );
+}
+
+// ============================================
+// NOTIFICATION HOOKS
+// ============================================
+
+import type { Notification, NotificationsResponse } from './types';
+
+export function useNotifications(limit?: number, unreadOnly?: boolean) {
+  return useQuery<NotificationsResponse>(
+    (signal) => api.getNotifications(limit, unreadOnly, signal),
+    [limit, unreadOnly]
+  );
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery<{ count: number }>(
+    (signal) => api.getUnreadNotificationCount(signal),
+    []
+  );
+}
+
+export function useMarkNotificationAsRead() {
+  return useMutation((id: string, signal: AbortSignal) =>
+    api.markNotificationAsRead(id, signal)
+  );
+}
+
+export function useMarkAllNotificationsAsRead() {
+  return useMutation<void, { success: boolean }>((_input: void, signal: AbortSignal) =>
+    api.markAllNotificationsAsRead(signal)
+  );
+}
+
+// ============================================
+// AUTH & SETTINGS HOOKS
+// ============================================
+
+export function useMe() {
+  return useQuery<import('./types').MeResponse>(
+    (signal) => api.getMe(signal),
+    []
+  );
+}
+
+export function useSettingsProfile() {
+  return useQuery<import('./types').SettingsProfile & { orgId?: string }>(
+    (signal) => api.getSettingsProfile(signal),
+    []
+  );
+}
+
+export function useRoles() {
+  return useQuery<import('./types').RolesResponse>(
+    (signal) => api.getRoles(signal),
+    []
+  );
+}
+
+export function useUserPreferences() {
+  return useQuery<import('./types').UserPreferencesResponse>(
+    (signal) => api.getUserPreferences(signal),
+    []
+  );
+}
+
+export function useUpdateMe() {
+  return useMutation(
+    (params: { body: Parameters<typeof api.updateMe>[0] }, signal: AbortSignal) =>
+      api.updateMe(params.body, signal)
+  );
+}
+
+export function useChangePassword() {
+  return useMutation(
+    (params: { body: Parameters<typeof api.changePassword>[0] }, signal: AbortSignal) =>
+      api.changePassword(params.body, signal)
+  );
+}
+
+export function useUpdateUserPreferences() {
+  return useMutation(
+    (params: { body: Parameters<typeof api.updateUserPreferences>[0] }, signal: AbortSignal) =>
+      api.updateUserPreferences(params.body, signal)
+  );
+}
+
+// ============================================
+// ATTENDANCE HOOKS
+// ============================================
+
+export function useLessonAttendance(lessonId: string | null) {
+  return useQuery<import('./types').LessonAttendance>(
+    (signal) => {
+      if (!lessonId) return Promise.reject(new Error('No lesson ID'));
+      return api.getLessonAttendance(lessonId, signal);
+    },
+    [lessonId]
+  );
+}
+
+export function useSaveLessonAttendance() {
+  return useMutation(
+    (params: { lessonId: string; input: import('./types').BulkAttendanceInput }, signal: AbortSignal) =>
+      api.saveLessonAttendance(params.lessonId, params.input, signal)
+  );
+}
+
+export function useStudentAttendance(studentId: string | null, params?: { from?: string; to?: string }) {
+  return useQuery<import('./types').StudentAttendanceResponse>(
+    (signal) => {
+      if (!studentId) return Promise.reject(new Error('No student ID'));
+      return api.getStudentAttendance(studentId, params, signal);
+    },
+    [studentId, JSON.stringify(params)]
+  );
+}
+
+export function useGroupAttendance(groupId: string | null, params?: { from?: string; to?: string; studentId?: string; groupBy?: 'student' | 'lesson' }) {
+  return useQuery<import('./types').GroupAttendanceResponse>(
+    (signal) => {
+      if (!groupId) return Promise.reject(new Error('No group ID'));
+      return api.getGroupAttendance(groupId, params, signal);
+    },
+    [groupId, JSON.stringify(params)]
   );
 }

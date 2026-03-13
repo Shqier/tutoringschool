@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../route';
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { createTestHeaders, cleanDatabase, createTestGroup, createTestTeacher } from '@/lib/test/db-helpers';
+import { createTestHeaders, cleanDatabase, createTestGroup, createTestTeacher, createTestPaymentPlan } from '@/lib/test/db-helpers';
 import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
 // ============================================
@@ -85,16 +85,12 @@ describe('GET /api/students', () => {
         fullName: 'Ahmed Hassan',
         email: 'ahmed@student.com',
         status: 'active',
-        balance: 0,
-        plan: 'Monthly Basic',
       }));
 
       await POST(createPostRequest({
         fullName: 'Fatima Ali',
         email: 'fatima@student.com',
         status: 'active',
-        balance: 100,
-        plan: 'Annual Premium',
       }));
 
       const request = createGetRequest();
@@ -364,13 +360,15 @@ describe('POST /api/students', () => {
 
   describe('Creation', () => {
     it('should create a student successfully', async () => {
+      const plan = await createTestPaymentPlan();
       const studentData = {
         fullName: 'Ahmed Hassan',
         email: 'ahmed@student.com',
         phone: '+1234567890',
         status: 'active',
-        balance: 150,
-        plan: 'Annual Premium',
+        grade: 8,
+        planId: plan.id,
+        paymentStatus: 'active',
         groupIds: [],
       };
 
@@ -383,8 +381,9 @@ describe('POST /api/students', () => {
       expect(data.email).toBe(studentData.email);
       expect(data.phone).toBe(studentData.phone);
       expect(data.status).toBe(studentData.status);
-      expect(data.balance).toBe(studentData.balance);
-      expect(data.plan).toBe(studentData.plan);
+      expect(data.grade).toBe(studentData.grade);
+      expect(data.planId).toBe(studentData.planId);
+      expect(data.paymentStatus).toBe(studentData.paymentStatus);
       expect(data.orgId).toBe(DEFAULT_ORG_ID);
       expect(data.id).toBeDefined();
       expect(data.attendancePercent).toBe(100);
@@ -428,8 +427,7 @@ describe('POST /api/students', () => {
 
       expect(response.status).toBe(201);
       expect(data.status).toBe('active');
-      expect(data.balance).toBe(0);
-      expect(data.plan).toBe('Monthly Basic');
+      expect(data.paymentStatus).toBe('active');
       expect(data.groupIds).toEqual([]);
     });
 
@@ -601,47 +599,49 @@ describe('POST /api/students', () => {
     });
   });
 
-  describe('Balance and Plan', () => {
-    it('should accept positive balance', async () => {
+  describe('Grade, Plan, and Payment Status', () => {
+    it('should accept grade', async () => {
       const request = createPostRequest({
         fullName: 'Test Student',
         email: 'test@student.com',
-        balance: 500,
+        grade: 10,
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(201);
-      expect(data.balance).toBe(500);
+      expect(data.grade).toBe(10);
     });
 
-    it('should accept negative balance (owed amount)', async () => {
+    it('should accept planId', async () => {
+      const plan = await createTestPaymentPlan({ name: 'Custom Plan' });
       const request = createPostRequest({
         fullName: 'Test Student',
         email: 'test@student.com',
-        balance: -100,
+        planId: plan.id,
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(201);
-      expect(data.balance).toBe(-100);
+      expect(data.planId).toBe(plan.id);
+      expect(data.plan?.name).toBe('Custom Plan');
     });
 
-    it('should accept custom plan', async () => {
+    it('should accept paymentStatus', async () => {
       const request = createPostRequest({
         fullName: 'Test Student',
         email: 'test@student.com',
-        plan: 'Custom Enterprise Plan',
+        paymentStatus: 'overdue',
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(201);
-      expect(data.plan).toBe('Custom Enterprise Plan');
+      expect(data.paymentStatus).toBe('overdue');
     });
   });
 });

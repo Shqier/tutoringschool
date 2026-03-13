@@ -1,5 +1,8 @@
 // ============================================
-// BUSALA DASHBOARD MOCK DATA
+// BUSALA DASHBOARD MOCK DATA (LEGACY)
+// Navigation items moved to @/config/navigation.
+// Dashboard, settings, and user data now use real APIs.
+// This file is kept for reference / seed data types.
 // ============================================
 
 import type {
@@ -24,6 +27,7 @@ import type {
   NavItem,
 } from '@/types/dashboard';
 
+// Legacy exports - not used by app (APIs used instead)
 export const currentUser: User = {
   id: '1',
   name: 'Sarah',
@@ -705,25 +709,4 @@ export const quickActions: QuickAction[] = [
   },
 ];
 
-export const topNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/', icon: 'LayoutDashboard' },
-  { id: 'teachers', label: 'Teachers', href: '/teachers', icon: 'Users' },
-  { id: 'students', label: 'Students', href: '/students', icon: 'GraduationCap' },
-  { id: 'groups', label: 'Groups', href: '/groups', icon: 'Users2' },
-  { id: 'rooms', label: 'Rooms', href: '/rooms', icon: 'DoorOpen' },
-  { id: 'scheduling', label: 'Scheduling', href: '/scheduling', icon: 'Calendar' },
-];
-
-export const sidebarNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/', icon: 'LayoutDashboard' },
-  { id: 'groups', label: 'Groups', href: '/groups', icon: 'Users2' },
-  { id: 'lessons', label: 'Lessons', href: '/lessons', icon: 'BookOpen' },
-  { id: 'teachers', label: 'Teachers', href: '/teachers', icon: 'Users' },
-  { id: 'students', label: 'Students', href: '/students', icon: 'GraduationCap' },
-  { id: 'rooms', label: 'Rooms', href: '/rooms', icon: 'DoorOpen' },
-  { id: 'approvals', label: 'Approvals', href: '/approvals', icon: 'ClipboardCheck', badge: 5 },
-];
-
-export const sidebarBottomItems: NavItem[] = [
-  { id: 'settings', label: 'Settings', href: '/settings', icon: 'Settings' },
-];
+// Navigation: use @/config/navigation (topNavItems, sidebarNavItems, sidebarBottomItems)

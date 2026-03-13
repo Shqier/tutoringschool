@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   MoreVertical,
@@ -32,6 +33,7 @@ import { useStudents, useDeleteStudent } from '@/lib/api/hooks';
 import type { Student } from '@/lib/api/types';
 
 export default function StudentsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [groupFilter, setGroupFilter] = useState('all');
@@ -88,19 +90,11 @@ export default function StudentsPage() {
     { key: 'name', label: 'Student', width: 'flex-1' },
     { key: 'groups', label: 'Groups', width: 'w-44', hideOnMobile: true },
     { key: 'attendance', label: 'Attendance', width: 'w-28' },
-    { key: 'lastSession', label: 'Last Session', width: 'w-32', hideOnTablet: true },
-    { key: 'balance', label: 'Balance', width: 'w-28', hideOnTablet: true },
+    { key: 'plan', label: 'Plan', width: 'w-36', hideOnTablet: true },
+    { key: 'payment', label: 'Payment', width: 'w-28', hideOnTablet: true },
     { key: 'status', label: 'Status', width: 'w-24' },
     { key: 'actions', label: '', width: 'w-12' },
   ];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Render content
   const renderContent = () => {
@@ -147,7 +141,7 @@ export default function StudentsPage() {
         {filteredStudents.map((student) => (
           <DataTableRow
             key={student.id}
-            onClick={() => dialog.openView(student)}
+            onClick={() => router.push(`/students/${student.id}`)}
             className="cursor-pointer hover:bg-busala-hover-bg"
           >
             {/* Name & Avatar */}
@@ -210,25 +204,25 @@ export default function StudentsPage() {
               </div>
             </div>
 
-            {/* Last Session */}
-            <div className="w-32 hidden lg:block">
-              <p className="text-xs text-busala-text-muted">
-                {student.enrolledDate ? new Date(student.enrolledDate).toLocaleDateString() : 'N/A'}
+            {/* Plan */}
+            <div className="w-36 hidden lg:block">
+              <p className="text-sm font-medium text-busala-text-primary truncate">
+                {student.plan?.name ?? 'No plan'}
+              </p>
+              <p className="text-xs text-busala-text-subtle">
+                {student.grade != null ? `Grade ${student.grade}` : '—'}
               </p>
             </div>
 
-            {/* Balance */}
+            {/* Payment Status */}
             <div className="w-28 hidden lg:block">
-              <p className={`text-sm font-medium ${
-                (student.balance || 0) < 0
-                  ? 'text-red-400'
-                  : (student.balance || 0) === 0
-                  ? 'text-amber-400'
-                  : 'text-emerald-400'
+              <span className={`text-sm font-medium capitalize ${
+                student.paymentStatus === 'overdue' ? 'text-red-400' :
+                student.paymentStatus === 'active' ? 'text-emerald-400' :
+                'text-busala-text-muted'
               }`}>
-                {formatCurrency(student.balance || 0)}
-              </p>
-              <p className="text-xs text-busala-text-subtle">{student.plan || 'No plan'}</p>
+                {student.paymentStatus ?? '—'}
+              </span>
             </div>
 
             {/* Status */}

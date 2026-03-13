@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Bell,
   Plus,
   Moon,
   Sun,
@@ -13,6 +12,7 @@ import {
   LogOut,
   ChevronDown,
 } from 'lucide-react';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -31,17 +31,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { topNavItems } from '@/data/mock-data';
-import type { NavItem } from '@/types/dashboard';
+import { topNavItems } from '@/config/navigation';
+import { useMe } from '@/lib/api/hooks';
+import type { NavItem } from '@/config/navigation';
 
 interface TopNavProps {
   userName?: string;
   userAvatar?: string;
 }
 
-export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
+export function TopNav({ userName: userNameProp, userAvatar }: TopNavProps) {
+  const { data: meData } = useMe();
+  const userName = userNameProp ?? meData?.user?.name ?? 'User';
+  const userEmail = meData?.user?.email ?? '';
   const [isDark, setIsDark] = React.useState(true);
-  const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [addLessonOpen, setAddLessonOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
@@ -80,33 +83,6 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
     console.log('Logging out...');
     router.push('/login');
   };
-
-  // Mock notifications
-  const notifications = [
-    {
-      id: '1',
-      title: 'New student enrolled',
-      message: 'Mohammed Al-Rashid joined Arabic Beginners A1',
-      time: '5 min ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      title: 'Lesson completed',
-      message: 'Arabic Intermediate B1 - 10:30 session ended',
-      time: '1 hour ago',
-      unread: true,
-    },
-    {
-      id: '3',
-      title: 'Room booking request',
-      message: 'Fatima Ali requested Conference Room',
-      time: '2 hours ago',
-      unread: false,
-    },
-  ];
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
     <header
@@ -148,67 +124,8 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          {/* Notification Bell with Dropdown */}
-          {mounted ? (
-            <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
-                >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-busala-gold rounded-full" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-80 bg-card border-border text-card-foreground"
-            >
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                {unreadCount > 0 && (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {unreadCount} unread
-                  </span>
-                )}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border" />
-              {notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="flex flex-col items-start gap-1 p-3 cursor-pointer hover:bg-busala-hover-bg focus:bg-busala-hover-bg"
-                >
-                  <div className="flex items-start justify-between w-full">
-                    <span className="text-sm font-medium">{notification.title}</span>
-                    {notification.unread && (
-                      <span className="w-2 h-2 bg-busala-gold rounded-full mt-1" />
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{notification.message}</span>
-                  <span className="text-xs text-busala-text-subtle">{notification.time}</span>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem className="justify-center text-sm text-busala-gold hover:bg-busala-hover-bg focus:bg-busala-hover-bg cursor-pointer">
-                View all notifications
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-busala-gold rounded-full" />
-              )}
-            </Button>
-          )}
+          {/* Notification Center */}
+          {mounted && <NotificationCenter />}
 
           {/* Add Lesson Button */}
           <Button
@@ -243,7 +160,7 @@ export function TopNav({ userName = 'Sarah', userAvatar }: TopNavProps) {
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{userName}</span>
-                  <span className="text-xs text-muted-foreground">sarah@busala.com</span>
+                  <span className="text-xs text-muted-foreground">{userEmail || '—'}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />

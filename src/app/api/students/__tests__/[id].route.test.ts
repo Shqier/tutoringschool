@@ -7,7 +7,7 @@ import { GET, PATCH, DELETE } from '../[id]/route';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { createTestHeaders, cleanDatabase, createTestGroup, createTestTeacher } from '@/lib/test/db-helpers';
+import { createTestHeaders, cleanDatabase, createTestGroup, createTestTeacher, createTestPaymentPlan } from '@/lib/test/db-helpers';
 import { DEFAULT_ORG_ID } from '@/lib/db/seed-prisma';
 
 // ============================================
@@ -19,8 +19,8 @@ async function createTestStudent(overrides: any = {}) {
     fullName: 'Test Student',
     email: `student_${uuidv4()}@test.com`,
     status: 'active',
-    balance: 0,
-    plan: 'Monthly Basic',
+    grade: 5,
+    paymentStatus: 'active',
     groupIds: [],
   };
 
@@ -98,13 +98,15 @@ describe('GET /api/students/[id]', () => {
 
   describe('Retrieval', () => {
     it('should get student by ID successfully', async () => {
+      const plan = await createTestPaymentPlan({ name: 'Annual Premium' });
       const student = await createTestStudent({
         fullName: 'Ahmed Hassan',
         email: 'ahmed@student.com',
         phone: '+1234567890',
         status: 'active',
-        balance: 250,
-        plan: 'Annual Premium',
+        grade: 10,
+        planId: plan.id,
+        paymentStatus: 'active',
       });
 
       const request = createGetRequest(student.id);
@@ -117,8 +119,9 @@ describe('GET /api/students/[id]', () => {
       expect(data.email).toBe('ahmed@student.com');
       expect(data.phone).toBe('+1234567890');
       expect(data.status).toBe('active');
-      expect(data.balance).toBe(250);
-      expect(data.plan).toBe('Annual Premium');
+      expect(data.grade).toBe(10);
+      expect(data.planId).toBe(plan.id);
+      expect(data.plan?.name).toBe('Annual Premium');
     });
 
     it('should return 404 for non-existent student', async () => {
@@ -145,8 +148,9 @@ describe('GET /api/students/[id]', () => {
       expect(data).toHaveProperty('status');
       expect(data).toHaveProperty('groupIds');
       expect(data).toHaveProperty('attendancePercent');
-      expect(data).toHaveProperty('balance');
-      expect(data).toHaveProperty('plan');
+      expect(data).toHaveProperty('grade');
+      expect(data).toHaveProperty('planId');
+      expect(data).toHaveProperty('paymentStatus');
       expect(data).toHaveProperty('orgId');
     });
 
@@ -255,26 +259,29 @@ describe('PATCH /api/students/[id]', () => {
       expect(data.status).toBe('at_risk');
     });
 
-    it('should update balance', async () => {
-      const student = await createTestStudent({ balance: 0 });
+    it('should update grade', async () => {
+      const student = await createTestStudent({ grade: 5 });
 
-      const request = createPatchRequest(student.id, { balance: 500 });
+      const request = createPatchRequest(student.id, { grade: 10 });
       const response = await PATCH(request, await mockParams(student.id));
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.balance).toBe(500);
+      expect(data.grade).toBe(10);
     });
 
-    it('should update plan', async () => {
-      const student = await createTestStudent({ plan: 'Monthly Basic' });
+    it('should update planId', async () => {
+      const plan1 = await createTestPaymentPlan({ name: 'Basic' });
+      const plan2 = await createTestPaymentPlan({ name: 'Annual Premium' });
+      const student = await createTestStudent({ planId: plan1.id });
 
-      const request = createPatchRequest(student.id, { plan: 'Annual Premium' });
+      const request = createPatchRequest(student.id, { planId: plan2.id });
       const response = await PATCH(request, await mockParams(student.id));
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.plan).toBe('Annual Premium');
+      expect(data.planId).toBe(plan2.id);
+      expect(data.plan?.name).toBe('Annual Premium');
     });
 
     it('should update groupIds', async () => {
@@ -293,13 +300,15 @@ describe('PATCH /api/students/[id]', () => {
     });
 
     it('should update multiple fields at once', async () => {
+      const plan = await createTestPaymentPlan({ name: 'Custom Plan' });
       const student = await createTestStudent();
 
       const request = createPatchRequest(student.id, {
         fullName: 'New Name',
         status: 'at_risk',
-        balance: 150,
-        plan: 'Custom Plan',
+        grade: 8,
+        planId: plan.id,
+        paymentStatus: 'overdue',
       });
       const response = await PATCH(request, await mockParams(student.id));
       const data = await response.json();
@@ -307,8 +316,10 @@ describe('PATCH /api/students/[id]', () => {
       expect(response.status).toBe(200);
       expect(data.fullName).toBe('New Name');
       expect(data.status).toBe('at_risk');
-      expect(data.balance).toBe(150);
-      expect(data.plan).toBe('Custom Plan');
+      expect(data.grade).toBe(8);
+      expect(data.planId).toBe(plan.id);
+      expect(data.plan?.name).toBe('Custom Plan');
+      expect(data.paymentStatus).toBe('overdue');
     });
 
     it('should return 404 for non-existent student', async () => {
@@ -464,11 +475,13 @@ describe('DELETE /api/students/[id]', () => {
     });
 
     it('should preserve student data when soft deleting', async () => {
+      const plan = await createTestPaymentPlan({ name: 'Premium' });
       const student = await createTestStudent({
         fullName: 'To Delete',
         email: 'delete@test.com',
-        balance: 500,
-        plan: 'Premium',
+        grade: 9,
+        planId: plan.id,
+        paymentStatus: 'active',
       });
 
       const request = createDeleteRequest(student.id, { 'x-user-role': 'manager' });
@@ -477,8 +490,9 @@ describe('DELETE /api/students/[id]', () => {
 
       expect(data.student.fullName).toBe('To Delete');
       expect(data.student.email).toBe('delete@test.com');
-      expect(data.student.balance).toBe(500);
-      expect(data.student.plan).toBe('Premium');
+      expect(data.student.grade).toBe(9);
+      expect(data.student.planId).toBe(plan.id);
+      expect(data.student.plan?.name).toBe('Premium');
     });
 
     it('should preserve groupIds when soft deleting', async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import {
   Plus,
   MapPin,
@@ -301,8 +302,8 @@ export default function LessonsPage() {
                     <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
                       Edit Lesson
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground">
-                      Mark Attendance
+                    <DropdownMenuItem className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground" asChild>
+                      <Link href={`/lessons/${lesson.id}/attendance`}>Mark Attendance</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-red-400 hover:text-red-400 focus:bg-red-500/10 focus:text-red-400"

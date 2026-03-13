@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   MoreVertical,
@@ -32,6 +33,7 @@ import { useTeachers, useDeleteTeacher } from '@/lib/api/hooks';
 import type { Teacher } from '@/lib/api/types';
 
 export default function TeachersPage() {
+  const router = useRouter();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -156,7 +158,7 @@ export default function TeachersPage() {
         {filteredTeachers.map((teacher) => (
           <DataTableRow
             key={teacher.id}
-            onClick={() => setSelectedTeacher(teacher)}
+            onClick={() => router.push(`/teachers/${teacher.id}`)}
             className={selectedTeacher?.id === teacher.id ? 'bg-busala-hover-bg' : ''}
           >
             {/* Name & Avatar */}
@@ -220,7 +222,7 @@ export default function TeachersPage() {
                     className="text-card-foreground hover:text-card-foreground focus:bg-busala-hover-bg focus:text-card-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedTeacher(teacher);
+                      router.push(`/teachers/${teacher.id}`);
                     }}
                   >
                     View Profile
