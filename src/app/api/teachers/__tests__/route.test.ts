@@ -354,7 +354,7 @@ describe('POST /api/teachers', () => {
       expect(data.subjects).toEqual(teacherData.subjects);
       expect(data.status).toBe(teacherData.status);
       expect(data.maxHours).toBe(teacherData.maxHours);
-      expect(data.orgId).toBe(DEFAULT_ORG_ID);
+      expect(data.tenantId).toBe(DEFAULT_ORG_ID);
       expect(data.id).toBeDefined();
       expect(data.lessonsToday).toBe(0);
     });

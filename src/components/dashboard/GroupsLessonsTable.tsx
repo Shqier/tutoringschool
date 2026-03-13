@@ -91,7 +91,13 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <Users className="h-8 w-8 text-busala-text-subtle mb-3" />
       <p className="text-sm text-busala-text-muted">No groups found</p>
-      <p className="text-xs text-busala-text-subtle mt-1">Create your first group to get started</p>
+      <p className="text-xs text-busala-text-subtle mt-1 mb-4">Create your first group to get started</p>
+      <a
+        href="/groups"
+        className="px-4 py-2 bg-busala-gold text-busala-bg-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+      >
+        + Add Group
+      </a>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: SCHEDULING
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -37,9 +40,9 @@ export async function GET(request: NextRequest) {
 
     // Build where clause for date filtering
     const where: {
-      orgId: string;
+      tenantId: string;
       startAt?: { gte?: Date; lte?: Date };
-    } = { orgId: user.orgId };
+    } = { tenantId: user.tenantId };
 
     if (startDate || endDate) {
       where.startAt = {};
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Detect conflicts
-    const conflicts = await detectAllConflicts(user.orgId);
+    const conflicts = await detectAllConflicts(user.tenantId);
 
     // Get pending conflicts (only for non-cancelled lessons)
     const pendingConflicts = conflicts.filter(c =>
@@ -162,7 +165,7 @@ export async function POST(request: NextRequest) {
         groupId,
         startDate,
         endDate,
-        group.orgId
+        group.tenantId
       );
 
       if (!result) {
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
         groupId,
         startDate,
         endDate,
-        user.orgId,
+        user.tenantId,
         skipConflicting
       );
 

@@ -1,29 +1,33 @@
-// Test Auth0 initialization
-import { Auth0Client } from '@auth0/nextjs-auth0/server';
+// Test auth initialization
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
+import { isOAuthConfigured } from '@/lib/auth';
 
 export async function GET() {
   try {
-    console.log('[Test] Creating Auth0Client...');
-    const auth0 = new Auth0Client();
-    console.log('[Test] Auth0Client created');
+    // Test database connection
+    const userCount = await prisma.user.count();
+    const tenantCount = await prisma.tenant.count();
     
     return NextResponse.json({
-      status: 'Auth0Client created successfully',
-      env: {
-        domain: process.env.AUTH0_ISSUER_BASE_URL,
-        baseUrl: process.env.AUTH0_BASE_URL,
-        clientIdSet: !!process.env.AUTH0_CLIENT_ID,
-        secretSet: !!process.env.AUTH0_SECRET,
-        clientSecretSet: !!process.env.AUTH0_CLIENT_SECRET,
-      }
+      status: 'Authentication system ready',
+      database: {
+        connected: true,
+        userCount,
+        tenantCount,
+      },
+      oauth: {
+        google: isOAuthConfigured('google'),
+        apple: isOAuthConfigured('apple'),
+      },
     });
   } catch (error: any) {
     console.error('[Test] Error:', error);
     return NextResponse.json({
-      error: 'Failed to create Auth0Client',
+      error: 'Failed to test auth system',
       message: error.message,
-      stack: error.stack,
     }, { status: 500 });
   }
 }

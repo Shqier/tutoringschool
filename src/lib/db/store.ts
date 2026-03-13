@@ -24,14 +24,14 @@ let approvals: Map<string, Approval> = new Map();
 let users: Map<string, User> = new Map();
 
 // Default organization ID for single-tenant mode
-export const DEFAULT_ORG_ID = 'org_busala_default';
+export const DEFAULT_TENANT_ID = 'org_busala_default';
 
 // ============================================
 // TEACHERS
 // ============================================
 export const teacherStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Teacher[] => {
-    return Array.from(teachers.values()).filter(t => t.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Teacher[] => {
+    return Array.from(teachers.values()).filter(t => t.tenantId === tenantId);
   },
   getById: (id: string): Teacher | undefined => {
     return teachers.get(id);
@@ -50,8 +50,8 @@ export const teacherStore = {
   delete: (id: string): boolean => {
     return teachers.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(teachers.values()).filter(t => t.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(teachers.values()).filter(t => t.tenantId === tenantId).length;
   },
 };
 
@@ -59,8 +59,8 @@ export const teacherStore = {
 // STUDENTS
 // ============================================
 export const studentStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Student[] => {
-    return Array.from(students.values()).filter(s => s.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Student[] => {
+    return Array.from(students.values()).filter(s => s.tenantId === tenantId);
   },
   getById: (id: string): Student | undefined => {
     return students.get(id);
@@ -79,8 +79,8 @@ export const studentStore = {
   delete: (id: string): boolean => {
     return students.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(students.values()).filter(s => s.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(students.values()).filter(s => s.tenantId === tenantId).length;
   },
   getByGroupId: (groupId: string): Student[] => {
     return Array.from(students.values()).filter(s => s.groupIds.includes(groupId));
@@ -91,8 +91,8 @@ export const studentStore = {
 // ROOMS
 // ============================================
 export const roomStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Room[] => {
-    return Array.from(rooms.values()).filter(r => r.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Room[] => {
+    return Array.from(rooms.values()).filter(r => r.tenantId === tenantId);
   },
   getById: (id: string): Room | undefined => {
     return rooms.get(id);
@@ -111,8 +111,8 @@ export const roomStore = {
   delete: (id: string): boolean => {
     return rooms.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(rooms.values()).filter(r => r.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(rooms.values()).filter(r => r.tenantId === tenantId).length;
   },
 };
 
@@ -120,8 +120,8 @@ export const roomStore = {
 // GROUPS
 // ============================================
 export const groupStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Group[] => {
-    return Array.from(groups.values()).filter(g => g.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Group[] => {
+    return Array.from(groups.values()).filter(g => g.tenantId === tenantId);
   },
   getById: (id: string): Group | undefined => {
     return groups.get(id);
@@ -140,8 +140,8 @@ export const groupStore = {
   delete: (id: string): boolean => {
     return groups.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(groups.values()).filter(g => g.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(groups.values()).filter(g => g.tenantId === tenantId).length;
   },
   getByTeacherId: (teacherId: string): Group[] => {
     return Array.from(groups.values()).filter(g => g.teacherId === teacherId);
@@ -152,8 +152,8 @@ export const groupStore = {
 // LESSONS
 // ============================================
 export const lessonStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Lesson[] => {
-    return Array.from(lessons.values()).filter(l => l.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Lesson[] => {
+    return Array.from(lessons.values()).filter(l => l.tenantId === tenantId);
   },
   getById: (id: string): Lesson | undefined => {
     return lessons.get(id);
@@ -172,12 +172,12 @@ export const lessonStore = {
   delete: (id: string): boolean => {
     return lessons.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(lessons.values()).filter(l => l.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(lessons.values()).filter(l => l.tenantId === tenantId).length;
   },
-  getByDateRange: (orgId: string, startDate: string, endDate: string): Lesson[] => {
+  getByDateRange: (tenantId: string, startDate: string, endDate: string): Lesson[] => {
     return Array.from(lessons.values()).filter(l =>
-      l.orgId === orgId &&
+      l.tenantId === tenantId &&
       l.startAt >= startDate &&
       l.startAt <= endDate
     );
@@ -197,8 +197,8 @@ export const lessonStore = {
 // APPROVALS
 // ============================================
 export const approvalStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): Approval[] => {
-    return Array.from(approvals.values()).filter(a => a.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): Approval[] => {
+    return Array.from(approvals.values()).filter(a => a.tenantId === tenantId);
   },
   getById: (id: string): Approval | undefined => {
     return approvals.get(id);
@@ -217,11 +217,11 @@ export const approvalStore = {
   delete: (id: string): boolean => {
     return approvals.delete(id);
   },
-  count: (orgId: string = DEFAULT_ORG_ID): number => {
-    return Array.from(approvals.values()).filter(a => a.orgId === orgId).length;
+  count: (tenantId: string = DEFAULT_TENANT_ID): number => {
+    return Array.from(approvals.values()).filter(a => a.tenantId === tenantId).length;
   },
-  getPending: (orgId: string = DEFAULT_ORG_ID): Approval[] => {
-    return Array.from(approvals.values()).filter(a => a.orgId === orgId && a.status === 'pending');
+  getPending: (tenantId: string = DEFAULT_TENANT_ID): Approval[] => {
+    return Array.from(approvals.values()).filter(a => a.tenantId === tenantId && a.status === 'pending');
   },
 };
 
@@ -229,8 +229,8 @@ export const approvalStore = {
 // USERS
 // ============================================
 export const userStore = {
-  getAll: (orgId: string = DEFAULT_ORG_ID): User[] => {
-    return Array.from(users.values()).filter(u => u.orgId === orgId);
+  getAll: (tenantId: string = DEFAULT_TENANT_ID): User[] => {
+    return Array.from(users.values()).filter(u => u.tenantId === tenantId);
   },
   getById: (id: string): User | undefined => {
     return users.get(id);

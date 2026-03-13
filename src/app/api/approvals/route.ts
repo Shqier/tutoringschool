@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: APPROVALS LIST & CREATE
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
     const priorityFilter = url.searchParams.get('priority');
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: any = { tenantId: user.tenantId };
 
     if (typeFilter && typeFilter !== 'all') {
       where.type = typeFilter;
@@ -65,16 +68,16 @@ export async function GET(request: NextRequest) {
 
     // Get counts for frontend (all approvals in org)
     const [totalCount, pendingCount, approvedCount, rejectedCount] = await Promise.all([
-      prisma.approval.count({ where: { orgId: user.orgId } }),
-      prisma.approval.count({ where: { orgId: user.orgId, status: 'pending' } }),
-      prisma.approval.count({ where: { orgId: user.orgId, status: 'approved' } }),
-      prisma.approval.count({ where: { orgId: user.orgId, status: 'rejected' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, status: 'pending' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, status: 'approved' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, status: 'rejected' } }),
     ]);
 
     const [teacherChangeCount, studentRequestCount, roomChangeCount] = await Promise.all([
-      prisma.approval.count({ where: { orgId: user.orgId, type: 'teacher_change' } }),
-      prisma.approval.count({ where: { orgId: user.orgId, type: 'student_request' } }),
-      prisma.approval.count({ where: { orgId: user.orgId, type: 'room_change' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, type: 'teacher_change' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, type: 'student_request' } }),
+      prisma.approval.count({ where: { tenantId: user.tenantId, type: 'room_change' } }),
     ]);
 
     const counts = {
@@ -127,7 +130,7 @@ export async function POST(request: NextRequest) {
         priority,
         requesterId,
         requesterName,
-        orgId: user.orgId,
+        tenantId: user.tenantId,
       },
     });
 

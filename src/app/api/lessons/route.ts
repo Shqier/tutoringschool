@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: LESSONS LIST & CREATE
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
     const filters = filterParsed.data;
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: any = { tenantId: user.tenantId };
 
     if (filters.startDate) {
       where.startAt = { ...where.startAt, gte: new Date(filters.startDate) };
@@ -103,7 +106,7 @@ export async function GET(request: NextRequest) {
       teacherId: lesson.teacherId,
       roomId: lesson.roomId,
       status: lesson.status,
-      orgId: lesson.orgId,
+      tenantId: lesson.tenantId,
       createdAt: lesson.createdAt.toISOString(),
       updatedAt: lesson.updatedAt.toISOString(),
       teacherName: lesson.teacher.fullName,
@@ -209,7 +212,7 @@ export async function POST(request: NextRequest) {
         teacherId,
         roomId,
         status,
-        orgId: user.orgId,
+        tenantId: user.tenantId,
       },
     });
 

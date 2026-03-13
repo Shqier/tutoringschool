@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: ROOM BY ID
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -59,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Room not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update room from another organization', 403);
     }
 
@@ -75,7 +78,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       const duplicate = await prisma.room.findFirst({
         where: {
           name: parsed.data.name,
-          orgId: user.orgId,
+          tenantId: user.tenantId,
           id: { not: id },
         },
       });
@@ -113,7 +116,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Room not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot delete room from another organization', 403);
     }
 

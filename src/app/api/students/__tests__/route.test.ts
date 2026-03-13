@@ -385,7 +385,7 @@ describe('POST /api/students', () => {
       expect(data.status).toBe(studentData.status);
       expect(data.balance).toBe(studentData.balance);
       expect(data.plan).toBe(studentData.plan);
-      expect(data.orgId).toBe(DEFAULT_ORG_ID);
+      expect(data.tenantId).toBe(DEFAULT_ORG_ID);
       expect(data.id).toBeDefined();
       expect(data.attendancePercent).toBe(100);
     });

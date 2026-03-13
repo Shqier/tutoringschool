@@ -132,25 +132,32 @@ export async function GET(request: NextRequest) {
       // Sync user with database
       if (userInfo.email) {
         try {
+          // For now, use the default tenant - in production, you'd determine tenant from subdomain
+          const tenantId = 'tenant_busala_default';
+          
           let dbUser = await prisma.user.findUnique({
-            where: { email: userInfo.email },
+            where: { 
+              email_tenantId: { email: userInfo.email, tenantId }
+            },
           });
 
           if (!dbUser) {
             dbUser = await prisma.user.create({
               data: {
+                tenantId,
                 email: userInfo.email,
                 name: userInfo.name || userInfo.email.split('@')[0],
                 role: 'staff',
-                orgId: 'org_busala_default',
+                auth0Id: userInfo.sub,
               },
             });
             console.log(`[Auth] Created new user: ${userInfo.email}`);
           } else {
             await prisma.user.update({
-              where: { email: userInfo.email },
+              where: { id: dbUser.id },
               data: {
                 name: userInfo.name || dbUser.name,
+                auth0Id: userInfo.sub || dbUser.auth0Id,
               },
             });
           }

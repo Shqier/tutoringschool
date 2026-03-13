@@ -1,23 +1,18 @@
 // ============================================
 // AUTHENTICATION HOOK
-// Wrapper around Auth0's useUser with additional utilities
+// Custom auth using our session-based authentication
 // ============================================
 
 'use client';
 
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
 
 export interface User {
-  sub: string;
+  id: string;
   email: string;
-  email_verified: boolean;
-  name?: string;
-  picture?: string;
-  org_id?: string;
-  role?: string;
-  db_id?: string;
+  name: string;
+  role: string;
 }
 
 export interface UseAuthReturn {
@@ -25,8 +20,8 @@ export interface UseAuthReturn {
   isLoading: boolean;
   error: Error | null;
   isAuthenticated: boolean;
-  login: () => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
@@ -34,31 +29,78 @@ export interface UseAuthReturn {
  * Hook for accessing authentication state and methods
  */
 export function useAuth(): UseAuthReturn {
-  const { user: auth0User, error: auth0Error, isLoading } = useUser();
-  const error = auth0Error || null;
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
-  const user = auth0User as User | null;
-  const isAuthenticated = !!user;
-
-  const login = useCallback(() => {
-    window.location.href = '/api/auth/login';
-  }, []);
-
-  const logout = useCallback(() => {
-    window.location.href = '/api/auth/logout';
-  }, []);
-
   const checkSession = useCallback(async () => {
-    // Force a session check by refreshing the router
-    router.refresh();
+    try {
+      const response = await fetch('/api/auth/session');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Check session on mount
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Login failed');
+      }
+
+      setUser(data.user);
+      router.push('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Login failed'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [router]);
 
   return {
     user,
     isLoading,
     error,
-    isAuthenticated,
+    isAuthenticated: !!user,
     login,
     logout,
     checkSession,
@@ -86,8 +128,9 @@ export function useRequireAuth(redirectTo: string = '/login'): UseAuthReturn {
  */
 export function useUserRole(): {
   role: string | null;
+  isOwner: boolean;
   isAdmin: boolean;
-  isManager: boolean;
+  isCoordinator: boolean;
   isTeacher: boolean;
   isStaff: boolean;
 } {
@@ -96,9 +139,10 @@ export function useUserRole(): {
 
   return {
     role,
-    isAdmin: role === 'admin',
-    isManager: role === 'manager' || role === 'admin',
-    isTeacher: role === 'teacher' || role === 'manager' || role === 'admin',
+    isOwner: role === 'owner',
+    isAdmin: role === 'admin' || role === 'owner',
+    isCoordinator: role === 'coordinator' || role === 'admin' || role === 'owner',
+    isTeacher: role === 'teacher' || role === 'coordinator' || role === 'admin' || role === 'owner',
     isStaff: !!role,
   };
 }
@@ -107,14 +151,11 @@ export function useUserRole(): {
  * Hook for accessing organization info
  */
 export function useOrganization(): {
-  orgId: string | null;
-  isDefaultOrg: boolean;
+  tenantId: string | null;
 } {
-  const { user } = useAuth();
-  const orgId = user?.org_id || null;
-
+  // Tenant info comes from the user context in a real implementation
+  // For now, return null - the tenant is resolved server-side
   return {
-    orgId,
-    isDefaultOrg: orgId === 'org_busala_default',
+    tenantId: null,
   };
 }

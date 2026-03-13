@@ -11,7 +11,7 @@
   /* Base Radius */
   --radius: 1rem;
 
-  /* Busala Brand Colors */
+  /* ClassHub Brand Colors */
   --busala-gold: #F5A623;
   --busala-gold-light: #FFD07A;
   --busala-gold-dark: #D4920E;
@@ -184,12 +184,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Busala Brand Colors */
+  /* ClassHub Brand Colors */
   --color-busala-gold: var(--busala-gold);
   --color-busala-gold-light: var(--busala-gold-light);
   --color-busala-gold-dark: var(--busala-gold-dark);
 
-  /* Busala Background Colors */
+  /* ClassHub Background Colors */
   --color-busala-bg-primary: var(--busala-bg-primary);
   --color-busala-bg-secondary: var(--busala-bg-secondary);
   --color-busala-bg-card: var(--busala-bg-card);
@@ -266,7 +266,7 @@
    ============================================ */
 
 @layer utilities {
-  /* Busala Card Glass Effect */
+  /* ClassHub Card Glass Effect */
   .busala-card {
     background: var(--busala-glass-bg);
     backdrop-filter: blur(var(--busala-glass-blur));

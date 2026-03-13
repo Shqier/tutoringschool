@@ -147,7 +147,7 @@ describe('GET /api/students/[id]', () => {
       expect(data).toHaveProperty('attendancePercent');
       expect(data).toHaveProperty('balance');
       expect(data).toHaveProperty('plan');
-      expect(data).toHaveProperty('orgId');
+      expect(data).toHaveProperty('tenantId');
     });
 
     it('should include groupIds array', async () => {

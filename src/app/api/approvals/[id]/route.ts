@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: APPROVAL BY ID
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -59,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Approval not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update approval from another organization', 403);
     }
 
@@ -108,7 +111,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Approval not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update approval from another organization', 403);
     }
 
@@ -157,7 +160,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Approval not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update approval from another organization', 403);
     }
 

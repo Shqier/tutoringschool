@@ -43,7 +43,7 @@ async function main() {
       ],
       hoursThisWeek: 0,
       maxHours: 25,
-      orgId: 'test-org',
+      tenantId: 'tenant_busala_default',
     },
   });
 

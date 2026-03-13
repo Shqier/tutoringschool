@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: GROUP BY ID
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -77,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Group not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update group from another organization', 403);
     }
 
@@ -113,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       const duplicate = await prisma.group.findFirst({
         where: {
           name: parsed.data.name,
-          orgId: user.orgId,
+          tenantId: user.tenantId,
           id: { not: id },
         },
       });
@@ -186,7 +189,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Group not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot delete group from another organization', 403);
     }
 
@@ -228,7 +231,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Group not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot modify group from another organization', 403);
     }
 

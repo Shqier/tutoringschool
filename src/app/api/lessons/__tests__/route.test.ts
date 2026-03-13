@@ -85,7 +85,7 @@ describe('POST /api/lessons', () => {
       expect(data.studentId).toBe(student.id);
       expect(data.type).toBe('one_on_one');
       expect(data.status).toBe('upcoming');
-      expect(data.orgId).toBe(DEFAULT_ORG_ID);
+      expect(data.tenantId).toBe(DEFAULT_ORG_ID);
     });
 
     it('should create a group lesson successfully', async () => {

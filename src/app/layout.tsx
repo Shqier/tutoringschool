@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
-import { Auth0Provider } from '@auth0/nextjs-auth0/client';
 import './globals.css';
 
 const geistSans = Geist({
@@ -15,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Busala - School Management System',
-  description: 'Streamline your school operations with our comprehensive management platform',
+  title: 'ClassHub - School Management Platform',
+  description: 'The complete platform for schools to manage teachers, students, scheduling, and more. Join hundreds of institutions using ClassHub.',
 };
 
 export default function RootLayout({
@@ -29,9 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Auth0Provider>
-          {children}
-        </Auth0Provider>
+        {children}
         <Toaster
           position="top-right"
           toastOptions={{

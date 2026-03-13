@@ -106,10 +106,10 @@ export async function checkAllConflicts(
 /**
  * Detect all conflicts in the system
  */
-export async function detectAllConflicts(orgId: string): Promise<ScheduleConflict[]> {
+export async function detectAllConflicts(tenantId: string): Promise<ScheduleConflict[]> {
   const lessons = await prisma.lesson.findMany({
     where: {
-      orgId,
+      tenantId,
       status: { not: 'cancelled' },
     },
     orderBy: { startAt: 'asc' },
@@ -183,7 +183,7 @@ export async function generateLessonsForGroup(
   group: Group,
   startDateStr: string,
   endDateStr: string,
-  orgId: string
+  tenantId: string
 ): Promise<{ lessons: Lesson[]; conflicts: ScheduleConflict[] }> {
   const scheduleRule = group.scheduleRule;
   if (!scheduleRule || typeof scheduleRule !== 'object') {
@@ -231,7 +231,7 @@ export async function generateLessonsForGroup(
         teacherId: group.teacherId,
         roomId: rule.roomId || group.roomId,
         status: 'upcoming',
-        orgId,
+        tenantId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -280,12 +280,12 @@ export async function previewGeneratedLessons(
   groupId: string,
   startDateStr: string,
   endDateStr: string,
-  orgId: string
+  tenantId: string
 ): Promise<{ lessons: Lesson[]; conflicts: ScheduleConflict[] } | null> {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group) return null;
 
-  return generateLessonsForGroup(group as unknown as Group, startDateStr, endDateStr, orgId);
+  return generateLessonsForGroup(group as unknown as Group, startDateStr, endDateStr, tenantId);
 }
 
 /**
@@ -295,13 +295,13 @@ export async function generateAndSaveLessons(
   groupId: string,
   startDateStr: string,
   endDateStr: string,
-  orgId: string,
+  tenantId: string,
   skipConflicting: boolean = false
 ): Promise<{ created: Lesson[]; skipped: Lesson[]; conflicts: ScheduleConflict[] } | null> {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group) return null;
 
-  const { lessons, conflicts } = await generateLessonsForGroup(group as unknown as Group, startDateStr, endDateStr, orgId);
+  const { lessons, conflicts } = await generateLessonsForGroup(group as unknown as Group, startDateStr, endDateStr, tenantId);
 
   const created: Lesson[] = [];
   const skipped: Lesson[] = [];
@@ -324,7 +324,7 @@ export async function generateAndSaveLessons(
           teacherId: lesson.teacherId,
           roomId: lesson.roomId,
           status: lesson.status,
-          orgId: lesson.orgId,
+          tenantId: lesson.tenantId,
         },
       });
       created.push(createdLesson as unknown as Lesson);

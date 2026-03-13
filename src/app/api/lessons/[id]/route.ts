@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: LESSON BY ID
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       teacherId: lesson.teacherId,
       roomId: lesson.roomId,
       status: lesson.status,
-      orgId: lesson.orgId,
+      tenantId: lesson.tenantId,
       createdAt: lesson.createdAt.toISOString(),
       updatedAt: lesson.updatedAt.toISOString(),
       teacher: lesson.teacher || null,
@@ -105,7 +108,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Lesson not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot update lesson from another organization', 403);
     }
 
@@ -230,7 +233,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return errorResponse('NOT_FOUND', 'Lesson not found', 404);
     }
 
-    if (existing.orgId !== user.orgId) {
+    if (existing.tenantId !== user.tenantId) {
       return errorResponse('FORBIDDEN', 'Cannot cancel lesson from another organization', 403);
     }
 

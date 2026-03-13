@@ -337,7 +337,7 @@ describe('POST /api/groups', () => {
       expect(data.roomId).toBe(room.id);
       expect(data.studentIds).toEqual([student1.id, student2.id]);
       expect(data.color).toBe(groupData.color);
-      expect(data.orgId).toBe(DEFAULT_ORG_ID);
+      expect(data.tenantId).toBe(DEFAULT_ORG_ID);
       expect(data.id).toBeDefined();
     });
 

@@ -124,7 +124,7 @@ export function hasMinimumRole(userRole: UserRole, minimumRole: UserRole): boole
 export interface RequestUser {
   id: string;
   role: UserRole;
-  orgId: string;
+  tenantId: string;
   email?: string;
 }
 
@@ -136,18 +136,18 @@ export function getUserFromRequest(request: Request): RequestUser {
   // Headers are set by the auth middleware (src/middleware.ts)
   const roleHeader = request.headers.get('x-user-role') as UserRole | null;
   const userIdHeader = request.headers.get('x-user-id');
-  const orgIdHeader = request.headers.get('x-org-id');
+  const tenantIdHeader = request.headers.get('x-tenant-id') || request.headers.get('x-org-id');
   const emailHeader = request.headers.get('x-user-email');
 
   // If headers are missing, we're in an unprotected route or middleware failed
-  if (!userIdHeader || !roleHeader || !orgIdHeader) {
+  if (!userIdHeader || !roleHeader || !tenantIdHeader) {
     // Check if we're in development mode with explicit dev headers
     const devRole = request.headers.get('x-dev-role') as UserRole | null;
     if (process.env.NODE_ENV === 'development' && devRole) {
       return {
         id: 'dev_user',
         role: devRole,
-        orgId: 'org_busala_default',
+        tenantId: 'tenant_busala_default',
         email: 'dev@busala.com',
       };
     }
@@ -156,7 +156,7 @@ export function getUserFromRequest(request: Request): RequestUser {
     return {
       id: 'anonymous',
       role: 'staff',
-      orgId: 'org_busala_default',
+      tenantId: 'tenant_busala_default',
       email: undefined,
     };
   }
@@ -164,7 +164,7 @@ export function getUserFromRequest(request: Request): RequestUser {
   return {
     id: userIdHeader,
     role: roleHeader,
-    orgId: orgIdHeader,
+    tenantId: tenantIdHeader,
     email: emailHeader || undefined,
   };
 }

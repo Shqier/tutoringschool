@@ -706,7 +706,7 @@ export const quickActions: QuickAction[] = [
 ];
 
 export const topNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/', icon: 'LayoutDashboard' },
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
   { id: 'teachers', label: 'Teachers', href: '/teachers', icon: 'Users' },
   { id: 'students', label: 'Students', href: '/students', icon: 'GraduationCap' },
   { id: 'groups', label: 'Groups', href: '/groups', icon: 'Users2' },
@@ -715,7 +715,7 @@ export const topNavItems: NavItem[] = [
 ];
 
 export const sidebarNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/', icon: 'LayoutDashboard' },
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
   { id: 'groups', label: 'Groups', href: '/groups', icon: 'Users2' },
   { id: 'lessons', label: 'Lessons', href: '/lessons', icon: 'BookOpen' },
   { id: 'teachers', label: 'Teachers', href: '/teachers', icon: 'Users' },

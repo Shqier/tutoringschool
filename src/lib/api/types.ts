@@ -33,7 +33,7 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'manager' | 'teacher' | 'staff';
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,7 +67,7 @@ export interface Teacher {
   hoursThisWeek?: number;
   maxHours?: number;
   lessonsToday?: number; // Computed field: count of lessons today
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,7 +83,7 @@ export interface Student {
   balance?: number;
   plan?: string;
   enrolledDate?: string;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,7 +97,7 @@ export interface Room {
   floor?: string;
   equipment?: string[];
   utilizationPercent?: number;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -119,7 +119,7 @@ export interface Group {
   studentCount?: number;
   color?: string;
   scheduleRule?: ScheduleRule;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -139,7 +139,7 @@ export interface Lesson {
   studentName?: string; // populated
   roomId?: string;
   roomName?: string; // populated
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -169,7 +169,7 @@ export interface Approval {
   updatedAt: string;
   reviewerNote?: string;
   payload?: Record<string, unknown>;
-  orgId: string;
+  tenantId: string;
 }
 
 // ============================================
@@ -407,7 +407,7 @@ export interface MeResponse {
     email: string;
     name: string;
     role: string;
-    orgId: string;
+    tenantId: string;
     createdAt: string;
     updatedAt: string;
   };

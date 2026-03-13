@@ -3,7 +3,7 @@ import { checkTeacherAvailability } from '../teacher-availability';
 import { prisma } from '../../db/prisma';
 import { v4 as uuidv4 } from 'uuid';
 
-const DEFAULT_ORG_ID = 'org_busala_default';
+const DEFAULT_TENANT_ID = 'org_busala_default';
 
 async function createTestTeacher(weeklyAvailability: any[], exceptions: any[] = []) {
   const randomId = Math.random().toString(36).substring(7);
@@ -18,7 +18,7 @@ async function createTestTeacher(weeklyAvailability: any[], exceptions: any[] = 
       availabilityExceptions: exceptions as any,
       hoursThisWeek: 0,
       maxHours: 25,
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
     },
   });
 }

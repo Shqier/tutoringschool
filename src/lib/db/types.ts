@@ -47,7 +47,7 @@ export interface Teacher {
   availabilityExceptions: AvailabilityException[];
   hoursThisWeek: number;
   maxHours: number;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,7 +63,7 @@ export interface Student {
   balance: number;
   plan: string;
   enrolledDate: string;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,7 +75,7 @@ export interface Room {
   status: RoomStatus;
   floor?: string;
   equipment: string[];
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -88,7 +88,7 @@ export interface Group {
   studentIds: string[];
   scheduleRule?: ScheduleRule;
   color?: string;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -104,7 +104,7 @@ export interface Lesson {
   teacherId: string;
   roomId?: string;
   status: LessonStatus;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,7 +121,7 @@ export interface Approval {
   requesterName: string;
   reviewerId?: string;
   reviewerNote?: string;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -131,7 +131,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  orgId: string;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -55,8 +55,8 @@ async function request<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
-      // Note: Auth headers are automatically set by middleware
-      // from the Auth0 session. Don't add them here.
+      // Note: Session cookie is automatically sent with requests
+      // The middleware validates the session on the server side.
       ...headers,
     },
     signal,
@@ -91,6 +91,13 @@ async function request<T>(
     // Handle 409 Conflict specially
     if (response.status === 409 && data.conflicts) {
       throw new ApiConflictError(data as ConflictResponse);
+    }
+
+    // Handle 401 Unauthorized - return empty data for list endpoints
+    if (response.status === 401) {
+      // Return empty array/object based on typical response structure
+      // This allows UI to show "empty state" with Add buttons
+      return { data: [], pagination: null } as T;
     }
 
     // Handle other errors
@@ -180,7 +187,7 @@ export async function getMe(signal?: AbortSignal): Promise<MeResponse> {
       email: 'admin@busala.com',
       name: 'Admin User',
       role: 'admin',
-      orgId: 'org_busala_default',
+      tenantId: 'org_busala_default',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

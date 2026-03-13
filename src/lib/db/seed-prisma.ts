@@ -1,653 +1,441 @@
 // ============================================
-// BUSALA PRISMA SEED DATA
+// CLASSHUB PRISMA SEED DATA - Multi-Tenant
 // ============================================
-// Deterministic seed data for development using Prisma
+// Seeds database with default plans, tenant, and sample data
 
 import { prisma } from './prisma';
 import type { Prisma } from '@prisma/client';
+import {
+  teachers as mockTeachers,
+  rooms as mockRooms,
+  groups as mockGroups,
+  students as mockStudents,
+  todaysLessons as mockLessons,
+  approvals as mockApprovals,
+  currentUser,
+} from '@/data/mock-data';
 
-export const DEFAULT_ORG_ID = 'org_busala_default';
+// ============================================
+// DEFAULT DATA
+// ============================================
 
-const now = new Date();
+export const DEFAULT_TENANT_ID = 'tenant_busala_default';
+export const DEFAULT_TENANT_SLUG = 'busala-academy';
+export const DEFAULT_TENANT_SUBDOMAIN = 'busala';
 
-// Helper to create ISO date strings
-function isoDate(daysFromNow: number, hour: number, minute: number = 0): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  date.setHours(hour, minute, 0, 0);
-  return date;
+// Default plans
+const DEFAULT_PLANS = [
+  {
+    id: 'plan_starter',
+    name: 'Starter',
+    slug: 'starter',
+    description: 'Perfect for small schools and tutoring centers',
+    maxTeachers: 10,
+    maxStudents: 100,
+    maxGroups: 5,
+    maxRooms: 3,
+    maxLessons: 500,
+    priceMonthly: 2900, // $29.00
+    priceAnnual: 29000, // $290.00
+    features: ['Up to 10 teachers', 'Up to 100 students', '5 groups', '3 rooms', 'Basic scheduling', 'Email support'],
+    sortOrder: 1,
+  },
+  {
+    id: 'plan_growth',
+    name: 'Growth',
+    slug: 'growth',
+    description: 'For growing institutions with advanced needs',
+    maxTeachers: 30,
+    maxStudents: 500,
+    maxGroups: 15,
+    maxRooms: 10,
+    maxLessons: 2000,
+    priceMonthly: 7900, // $79.00
+    priceAnnual: 79000, // $790.00
+    features: ['Up to 30 teachers', 'Up to 500 students', '15 groups', '10 rooms', 'Advanced scheduling', 'Priority support', 'Analytics dashboard'],
+    sortOrder: 2,
+  },
+  {
+    id: 'plan_enterprise',
+    name: 'Enterprise',
+    slug: 'enterprise',
+    description: 'Unlimited everything for large organizations',
+    maxTeachers: 999999,
+    maxStudents: 999999,
+    maxGroups: 999999,
+    maxRooms: 999999,
+    maxLessons: 999999,
+    priceMonthly: 19900, // $199.00
+    priceAnnual: 199000, // $1990.00
+    features: ['Unlimited teachers', 'Unlimited students', 'Unlimited groups', 'Unlimited rooms', 'Advanced scheduling', 'Premium support', 'Analytics & Reporting', 'Custom integrations', 'Dedicated account manager'],
+    sortOrder: 3,
+  },
+];
+
+// Map mock availability string to weeklyAvailability JSON
+function parseAvailability(availability: string | undefined): Prisma.JsonArray {
+  const defaults: Record<string, { days: number[]; start: string; end: string }> = {
+    'Mon-Fri, 9AM-5PM': { days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00' },
+    'Mon-Thu, 10AM-6PM': { days: [1, 2, 3, 4], start: '10:00', end: '18:00' },
+    'Daily, 12PM-8PM': { days: [0, 1, 2, 3, 4, 5, 6], start: '12:00', end: '20:00' },
+    'Mon, Wed, Fri, 2PM-6PM': { days: [1, 3, 5], start: '14:00', end: '18:00' },
+    'Weekends only': { days: [0, 6], start: '15:00', end: '19:00' },
+    'Tue-Sat, 11AM-7PM': { days: [2, 3, 4, 5, 6], start: '11:00', end: '19:00' },
+  };
+  const parsed = defaults[availability ?? ''] ?? defaults['Mon-Fri, 9AM-5PM'];
+  return parsed.days.map((dayOfWeek) => ({
+    dayOfWeek,
+    startTime: parsed.start,
+    endTime: parsed.end,
+  })) as Prisma.JsonArray;
+}
+
+// Parse duration "90 min" to minutes
+function parseDuration(duration: string): number {
+  const m = duration.match(/(\d+)\s*min/);
+  return m ? parseInt(m[1], 10) : 60;
+}
+
+// Build date at given time today
+function todayAt(hour: number, minute: number): Date {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d;
 }
 
 // ============================================
 // SEED FUNCTION
 // ============================================
 export async function seedDatabase(): Promise<void> {
-  // Skip auto-seeding in test environment
   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
     return;
   }
 
-  console.log('[Busala] Starting database seed with Prisma...');
-
-  // Check if already seeded
-  const existingTeachers = await prisma.teacher.count();
-  if (existingTeachers > 0) {
-    console.log('[Busala] Database already seeded, skipping...');
-    return;
-  }
+  console.log('[ClassHub] Starting multi-tenant database seed...');
 
   try {
+    // Check if already seeded
+    const existingPlans = await prisma.plan.count();
+    if (existingPlans > 0) {
+      console.log('[ClassHub] Database already seeded, skipping...');
+      return;
+    }
+
     // ============================================
-    // USERS
+    // 1. SEED PLANS (Platform Level)
     // ============================================
-    const users = await prisma.user.createMany({
+    console.log('[ClassHub] Seeding plans...');
+    for (const plan of DEFAULT_PLANS) {
+      await prisma.plan.create({ data: plan as Prisma.PlanCreateInput });
+    }
+    console.log(`[ClassHub] Created ${DEFAULT_PLANS.length} plans`);
+
+    // ============================================
+    // 2. SEED DEFAULT TENANT
+    // ============================================
+    console.log('[ClassHub] Seeding demo tenant (Busala Academy)...');
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+
+    const defaultTenant = await prisma.tenant.create({
+      data: {
+        id: DEFAULT_TENANT_ID,
+        name: 'Busala Academy',
+        slug: DEFAULT_TENANT_SLUG,
+        subdomain: DEFAULT_TENANT_SUBDOMAIN,
+        email: 'admin@busala-academy.com',
+        phone: '+1 (555) 123-4567',
+        country: 'US',
+        timezone: 'America/New_York',
+        planId: 'plan_growth',
+        subscriptionStatus: 'trial',
+        trialEndsAt: trialEndDate,
+        onboardingStep: 0,
+        settings: {
+          workingDays: [1, 2, 3, 4, 5], // Mon-Fri
+          workingHoursStart: '08:00',
+          workingHoursEnd: '18:00',
+          defaultLessonDuration: 60,
+          academicYearStart: 9, // September
+          academicYearEnd: 6, // June
+        },
+      },
+    });
+    console.log(`[ClassHub] Created tenant: ${defaultTenant.name}`);
+
+    // ============================================
+    // 3. SEED SUPER ADMIN USER
+    // ============================================
+    console.log('[ClassHub] Seeding super admin...');
+    await prisma.superAdminUser.create({
+      data: {
+        id: 'superadmin_001',
+        email: 'platform@classhub.com',
+        hashedPassword: '$2a$10$YourHashedPasswordHere', // Placeholder - should be properly hashed
+        name: 'Platform Admin',
+        role: 'owner',
+        isActive: true,
+      },
+    });
+    console.log('[ClassHub] Created super admin user');
+
+    // ID mappings (name → id)
+    const teacherIds: Record<string, string> = {};
+    const roomIds: Record<string, string> = {};
+    const groupIds: Record<string, string> = {};
+    const studentIds: Record<string, string> = {};
+
+    // ============================================
+    // 4. SEED USERS (Tenant Level)
+    // ============================================
+    console.log('[ClassHub] Seeding users...');
+    await prisma.user.createMany({
       data: [
         {
           id: 'user_001',
-          email: 'sarah@busala.com',
-          name: 'Sarah Admin',
+          tenantId: DEFAULT_TENANT_ID,
+          email: currentUser.email,
+          name: currentUser.name,
           role: 'admin',
-          orgId: DEFAULT_ORG_ID,
+          isActive: true,
         },
         {
           id: 'user_002',
-          email: 'manager@busala.com',
+          tenantId: DEFAULT_TENANT_ID,
+          email: 'manager@busala-academy.com',
           name: 'Mike Manager',
-          role: 'manager',
-          orgId: DEFAULT_ORG_ID,
+          role: 'coordinator',
+          isActive: true,
+        },
+        {
+          id: 'user_003',
+          tenantId: DEFAULT_TENANT_ID,
+          email: 'teacher@busala-academy.com',
+          name: 'Teacher User',
+          role: 'teacher',
+          isActive: true,
         },
       ],
     });
+    console.log('[ClassHub] Created 3 users');
 
     // ============================================
-    // TEACHERS
+    // 5. SEED TEACHERS
     // ============================================
-    const teachers = await prisma.teacher.createMany({
-      data: [
-        {
-          id: 'teacher_001',
-          fullName: 'Ahmed Hassan',
-          email: 'ahmed.hassan@busala.com',
-          phone: '+1 234 567 8901',
-          subjects: ['Arabic Language', 'Arabic Grammar'],
-          status: 'active',
-          weeklyAvailability: [
-            { dayOfWeek: 1, startTime: '09:00', endTime: '17:00' },
-            { dayOfWeek: 2, startTime: '09:00', endTime: '17:00' },
-            { dayOfWeek: 3, startTime: '09:00', endTime: '17:00' },
-            { dayOfWeek: 4, startTime: '09:00', endTime: '17:00' },
-            { dayOfWeek: 5, startTime: '09:00', endTime: '17:00' },
-          ],
-          hoursThisWeek: 18,
-          maxHours: 25,
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'teacher_002',
-          fullName: 'Fatima Ali',
-          email: 'fatima.ali@busala.com',
-          phone: '+1 234 567 8902',
-          subjects: ['Arabic Grammar', 'Arabic Literature'],
-          status: 'active',
-          weeklyAvailability: [
-            { dayOfWeek: 1, startTime: '10:00', endTime: '18:00' },
-            { dayOfWeek: 2, startTime: '10:00', endTime: '18:00' },
-            { dayOfWeek: 3, startTime: '10:00', endTime: '18:00' },
-            { dayOfWeek: 4, startTime: '10:00', endTime: '18:00' },
-          ],
-          hoursThisWeek: 22,
-          maxHours: 25,
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'teacher_003',
-          fullName: 'Omar Khalid',
-          email: 'omar.khalid@busala.com',
-          phone: '+1 234 567 8903',
-          subjects: ['Quran Studies', 'Tajweed'],
-          status: 'active',
-          weeklyAvailability: [
-            { dayOfWeek: 0, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 1, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 2, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 3, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 4, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 5, startTime: '12:00', endTime: '20:00' },
-            { dayOfWeek: 6, startTime: '12:00', endTime: '20:00' },
-          ],
-          hoursThisWeek: 15,
-          maxHours: 20,
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'teacher_004',
-          fullName: 'Layla Mahmoud',
-          email: 'layla.mahmoud@busala.com',
-          phone: '+1 234 567 8904',
-          subjects: ['Advanced Arabic', 'Arabic Conversation'],
-          status: 'active',
-          weeklyAvailability: [
-            { dayOfWeek: 1, startTime: '14:00', endTime: '18:00' },
-            { dayOfWeek: 3, startTime: '14:00', endTime: '18:00' },
-            { dayOfWeek: 5, startTime: '14:00', endTime: '18:00' },
-          ],
-          hoursThisWeek: 12,
-          maxHours: 20,
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'teacher_005',
-          fullName: 'Yusuf Ibrahim',
-          email: 'yusuf.ibrahim@busala.com',
-          phone: '+1 234 567 8905',
-          subjects: ['Islamic Studies', 'Arabic History'],
-          status: 'inactive',
-          weeklyAvailability: [
-            { dayOfWeek: 6, startTime: '15:00', endTime: '19:00' },
-            { dayOfWeek: 0, startTime: '15:00', endTime: '19:00' },
-          ],
-          hoursThisWeek: 8,
-          maxHours: 15,
-          orgId: DEFAULT_ORG_ID,
-        },
-      ],
-    });
-
-    // ============================================
-    // ROOMS
-    // ============================================
-    const rooms = await prisma.room.createMany({
-      data: [
-        {
-          id: 'room_001',
-          name: 'Room 101',
-          capacity: 15,
-          status: 'available',
-          floor: 'Ground Floor',
-          equipment: ['Whiteboard', 'Projector', 'AC'],
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'room_002',
-          name: 'Room 102',
-          capacity: 10,
-          status: 'available',
-          floor: 'Ground Floor',
-          equipment: ['Whiteboard', 'AC'],
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'room_003',
-          name: 'Room 105',
-          capacity: 8,
-          status: 'available',
-          floor: 'Ground Floor',
-          equipment: ['Whiteboard', 'Audio System', 'AC'],
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'room_004',
-          name: 'Room 201',
-          capacity: 20,
-          status: 'available',
-          floor: '1st Floor',
-          equipment: ['Whiteboard', 'Projector', 'AC', 'Video Conferencing'],
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'room_005',
-          name: 'Room 203',
-          capacity: 12,
-          status: 'available',
-          floor: '1st Floor',
-          equipment: ['Whiteboard', 'Projector', 'AC'],
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'room_006',
-          name: 'Room 301',
-          capacity: 6,
-          status: 'maintenance',
-          floor: '2nd Floor',
-          equipment: ['Whiteboard', 'AC'],
-          orgId: DEFAULT_ORG_ID,
-        },
-      ],
-    });
-
-    // ============================================
-    // STUDENTS
-    // ============================================
-    const studentNames = [
-      'Mohammed Al-Rashid', 'Sara Abdullah', 'Ahmad Nasser', 'Fatima Hassan',
-      'Youssef Karim', 'Layla Omar', 'Hassan Ibrahim', 'Mariam Saleh',
-      'Ali Mansour', 'Noor Khalil', 'Khalid Faisal', 'Aisha Bakri',
-      'Omar Youssef', 'Hana Mahmoud', 'Tariq Ammar', 'Leila Nabil',
-      'Rami Saeed', 'Dina Farouk', 'Sami Hadid', 'Yasmin Taha',
-    ];
-
-    const studentData: Prisma.StudentCreateManyInput[] = studentNames.map((name, index) => {
-      const id = `student_${String(index + 1).padStart(3, '0')}`;
-      const firstName = name.split(' ')[0].toLowerCase();
-      const statuses: Array<'active' | 'at_risk' | 'inactive'> = ['active', 'active', 'active', 'at_risk', 'inactive'];
-      const plans = ['Monthly Basic', 'Monthly Premium', 'Annual Premium', 'Pay-as-you-go'];
-
-      // Assign students to groups based on seed groups
-      const groupIds: string[] = [];
-      const groupAssignments: Record<string, string[]> = {
-        'group_001': ['student_001', 'student_004', 'student_009', 'student_013'],
-        'group_002': ['student_002', 'student_006', 'student_010', 'student_014'],
-        'group_003': ['student_002', 'student_005', 'student_011', 'student_015'],
-        'group_004': ['student_003', 'student_007', 'student_012'],
-        'group_005': ['student_004', 'student_008', 'student_016', 'student_017', 'student_018'],
-        'group_006': ['student_007', 'student_010', 'student_019', 'student_020'],
-      };
-
-      Object.entries(groupAssignments).forEach(([groupId, studentIds]) => {
-        if (studentIds.includes(id)) {
-          groupIds.push(groupId);
-        }
-      });
-
-      const enrolledDate = new Date(2024, Math.floor(Math.random() * 12), 1 + Math.floor(Math.random() * 28));
-
+    console.log('[ClassHub] Seeding teachers...');
+    const teacherData: Prisma.TeacherCreateManyInput[] = mockTeachers.map((t, i) => {
+      const id = `teacher_${String(i + 1).padStart(3, '0')}`;
+      teacherIds[t.name] = id;
       return {
         id,
-        fullName: name,
-        email: `${firstName}@example.com`,
-        phone: `+1 234 567 ${1000 + index}`,
-        status: statuses[index % statuses.length],
-        groupIds,
-        attendancePercent: 60 + Math.floor(Math.random() * 40),
-        balance: Math.floor(Math.random() * 500) - 50,
-        plan: plans[index % plans.length],
-        enrolledDate,
-        orgId: DEFAULT_ORG_ID,
+        tenantId: DEFAULT_TENANT_ID,
+        fullName: t.name,
+        email: t.email ?? `${t.name.toLowerCase().replace(/\s+/g, '.')}@busala-academy.com`,
+        phone: t.phone ?? null,
+        subjects: t.subjects ?? (t.subject ? [t.subject] : []),
+        status: t.status as 'active' | 'inactive',
+        weeklyAvailability: parseAvailability(t.availability) as any,
+        availabilityExceptions: [] as any,
+        hoursThisWeek: t.hoursThisWeek,
+        maxHours: t.maxHours,
       };
     });
-
-    await prisma.student.createMany({ data: studentData });
+    await prisma.teacher.createMany({ data: teacherData });
+    console.log(`[ClassHub] Created ${teacherData.length} teachers`);
 
     // ============================================
-    // GROUPS
+    // 6. SEED ROOMS
     // ============================================
-    const groups = await prisma.group.createMany({
-      data: [
-        {
-          id: 'group_001',
-          name: 'Arabic Beginners A1',
-          teacherId: 'teacher_001',
-          roomId: 'room_001',
-          studentIds: ['student_001', 'student_004', 'student_009', 'student_013'],
-          scheduleRule: {
-            daysOfWeek: [1, 3, 5],
-            startTime: '09:00',
-            endTime: '10:30',
-            roomId: 'room_001',
-          },
-          color: '#F5A623',
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'group_002',
-          name: 'Arabic Intermediate B1',
-          teacherId: 'teacher_002',
-          roomId: 'room_005',
-          studentIds: ['student_002', 'student_006', 'student_010', 'student_014'],
-          scheduleRule: {
-            daysOfWeek: [2, 4],
-            startTime: '10:30',
-            endTime: '12:00',
-            roomId: 'room_005',
-          },
-          color: '#3B82F6',
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'group_003',
-          name: 'Quran Memorization',
-          teacherId: 'teacher_003',
-          roomId: 'room_003',
-          studentIds: ['student_002', 'student_005', 'student_011', 'student_015'],
-          scheduleRule: {
-            daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-            startTime: '12:00',
-            endTime: '13:00',
-            roomId: 'room_003',
-          },
-          color: '#8B5CF6',
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'group_004',
-          name: 'Arabic Advanced C1',
-          teacherId: 'teacher_004',
-          roomId: 'room_006',
-          studentIds: ['student_003', 'student_007', 'student_012'],
-          scheduleRule: {
-            daysOfWeek: [1, 3],
-            startTime: '14:00',
-            endTime: '15:30',
-            roomId: 'room_006',
-          },
-          color: '#10B981',
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'group_005',
-          name: 'Islamic Studies',
-          teacherId: 'teacher_005',
-          roomId: 'room_002',
-          studentIds: ['student_004', 'student_008', 'student_016', 'student_017', 'student_018'],
-          scheduleRule: {
-            daysOfWeek: [6, 0],
-            startTime: '15:30',
-            endTime: '17:00',
-            roomId: 'room_002',
-          },
-          color: '#EC4899',
-          orgId: DEFAULT_ORG_ID,
-        },
-        {
-          id: 'group_006',
-          name: 'Arabic Conversation Club',
-          teacherId: 'teacher_004',
-          roomId: 'room_004',
-          studentIds: ['student_007', 'student_010', 'student_019', 'student_020'],
-          scheduleRule: {
-            daysOfWeek: [4],
-            startTime: '17:00',
-            endTime: '18:00',
-            roomId: 'room_004',
-          },
-          color: '#F59E0B',
-          orgId: DEFAULT_ORG_ID,
-        },
-      ],
+    console.log('[ClassHub] Seeding rooms...');
+    const roomData: Prisma.RoomCreateManyInput[] = mockRooms.map((r, i) => {
+      const id = `room_${String(i + 1).padStart(3, '0')}`;
+      roomIds[r.name] = id;
+      return {
+        id,
+        tenantId: DEFAULT_TENANT_ID,
+        name: r.name,
+        capacity: r.capacity,
+        status: r.status as 'available' | 'occupied' | 'maintenance',
+        floor: r.floor ?? null,
+        equipment: r.equipment ?? [],
+      };
     });
+    await prisma.room.createMany({ data: roomData });
+    console.log(`[ClassHub] Created ${roomData.length} rooms`);
+
+    // Map group name to room (from todaysLessons)
+    const groupToRoom: Record<string, string> = {
+      'Arabic Beginners A1': 'Room 101',
+      'Arabic Intermediate B1': 'Room 203',
+      'Quran Memorization': 'Room 105',
+      'Arabic Advanced C1': 'Room 301',
+      'Islamic Studies': 'Room 102',
+      'Speaking Club': 'Room 201',
+    };
 
     // ============================================
-    // LESSONS
+    // 7. SEED GROUPS
     // ============================================
-    const groupsData = [
-      {
-        id: 'group_001',
-        name: 'Arabic Beginners A1',
-        teacherId: 'teacher_001',
-        scheduleRule: { daysOfWeek: [1, 3, 5], startTime: '09:00', endTime: '10:30', roomId: 'room_001' },
-      },
-      {
-        id: 'group_002',
-        name: 'Arabic Intermediate B1',
-        teacherId: 'teacher_002',
-        scheduleRule: { daysOfWeek: [2, 4], startTime: '10:30', endTime: '12:00', roomId: 'room_005' },
-      },
-      {
-        id: 'group_003',
-        name: 'Quran Memorization',
-        teacherId: 'teacher_003',
-        scheduleRule: { daysOfWeek: [0, 1, 2, 3, 4, 5, 6], startTime: '12:00', endTime: '13:00', roomId: 'room_003' },
-      },
-      {
-        id: 'group_004',
-        name: 'Arabic Advanced C1',
-        teacherId: 'teacher_004',
-        scheduleRule: { daysOfWeek: [1, 3], startTime: '14:00', endTime: '15:30', roomId: 'room_006' },
-      },
-      {
-        id: 'group_005',
-        name: 'Islamic Studies',
-        teacherId: 'teacher_005',
-        scheduleRule: { daysOfWeek: [6, 0], startTime: '15:30', endTime: '17:00', roomId: 'room_002' },
-      },
-      {
-        id: 'group_006',
-        name: 'Arabic Conversation Club',
-        teacherId: 'teacher_004',
-        scheduleRule: { daysOfWeek: [4], startTime: '17:00', endTime: '18:00', roomId: 'room_004' },
-      },
-    ];
-
-    const lessonsData: Prisma.LessonCreateManyInput[] = [];
-
-    // Generate lessons for the next 7 days
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      const date = new Date();
-      date.setDate(date.getDate() + dayOffset);
-      const dayOfWeek = date.getDay();
-
-      groupsData.forEach((group) => {
-        if (group.scheduleRule?.daysOfWeek.includes(dayOfWeek)) {
-          const [startHour, startMin] = group.scheduleRule.startTime.split(':').map(Number);
-          const [endHour, endMin] = group.scheduleRule.endTime.split(':').map(Number);
-
-          const startAt = new Date(date);
-          startAt.setHours(startHour, startMin, 0, 0);
-
-          const endAt = new Date(date);
-          endAt.setHours(endHour, endMin, 0, 0);
-
-          const nowTime = new Date();
-          let status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled' = 'upcoming';
-          if (endAt < nowTime) {
-            status = 'completed';
-          } else if (startAt <= nowTime && endAt >= nowTime) {
-            status = 'in_progress';
-          }
-
-          lessonsData.push({
-            id: `lesson_${String(lessonsData.length + 1).padStart(3, '0')}`,
-            title: group.name,
-            startAt,
-            endAt,
-            type: 'group',
-            groupId: group.id,
-            teacherId: group.teacherId,
-            roomId: group.scheduleRule.roomId,
-            status,
-            orgId: DEFAULT_ORG_ID,
-          });
-        }
+    console.log('[ClassHub] Seeding groups...');
+    const groupsToSeed = [...mockGroups];
+    if (!groupsToSeed.find((g) => g.name === 'Speaking Club')) {
+      groupsToSeed.push({
+        id: '6',
+        name: 'Speaking Club',
+        studentsCount: 4,
+        teacherName: 'Nour Ahmad',
+        schedule: 'Thu - 17:00',
+        nextLesson: 'Thursday, 17:00',
+        progress: 40,
       });
     }
 
-    // Add 1:1 lessons
-    lessonsData.push(
-      {
-        id: 'lesson_1on1_001',
-        title: 'Private Tutoring - Mohammed',
-        startAt: isoDate(1, 16, 0),
-        endAt: isoDate(1, 17, 0),
-        type: 'one_on_one',
-        studentId: 'student_001',
-        teacherId: 'teacher_001',
-        roomId: 'room_002',
-        status: 'upcoming',
-        orgId: DEFAULT_ORG_ID,
-      },
-      {
-        id: 'lesson_1on1_002',
-        title: 'Private Tutoring - Sara',
-        startAt: isoDate(2, 14, 0),
-        endAt: isoDate(2, 15, 0),
-        type: 'one_on_one',
-        studentId: 'student_002',
-        teacherId: 'teacher_002',
-        roomId: 'room_002',
-        status: 'upcoming',
-        orgId: DEFAULT_ORG_ID,
-      }
-    );
-
-    await prisma.lesson.createMany({ data: lessonsData });
-
-    // ============================================
-    // APPROVALS
-    // ============================================
-    const approvals = await prisma.approval.createMany({
-      data: [
-        {
-          id: 'approval_001',
-          type: 'teacher_change',
-          title: 'Schedule Change Request',
-          description: 'Ahmed Hassan requests to change Monday lessons to Tuesday',
-          payload: {
-            currentDay: 1,
-            requestedDay: 2,
-            reason: 'Personal appointment on Mondays',
-          },
-          status: 'pending',
-          priority: 'high',
-          requesterId: 'teacher_001',
-          requesterName: 'Ahmed Hassan',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-0.1, 10),
-        },
-        {
-          id: 'approval_002',
-          type: 'student_request',
-          title: 'Group Transfer Request',
-          description: 'Sara Abdullah wants to move from B1 to Advanced group',
-          payload: {
-            currentGroupId: 'group_002',
-            requestedGroupId: 'group_004',
-            reason: 'Ready for advanced level',
-          },
-          status: 'pending',
-          priority: 'medium',
-          requesterId: 'student_002',
-          requesterName: 'Sara Abdullah',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-0.2, 14),
-        },
-        {
-          id: 'approval_003',
-          type: 'room_change',
-          title: 'Room Booking Request',
-          description: 'Request to book Conference Room for special event on Friday',
-          payload: {
-            roomId: 'room_004',
-            date: isoDate(5, 0).toISOString().split('T')[0],
-            startTime: '14:00',
-            endTime: '17:00',
-            purpose: 'Parent-teacher conference',
-          },
-          status: 'pending',
-          priority: 'low',
-          requesterId: 'teacher_002',
-          requesterName: 'Fatima Ali',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-1, 9),
-        },
-        {
-          id: 'approval_004',
-          type: 'teacher_change',
-          title: 'Leave Request',
-          description: 'Omar Khalid requests leave for next week (3 days)',
-          payload: {
-            startDate: isoDate(7, 0).toISOString().split('T')[0],
-            endDate: isoDate(9, 0).toISOString().split('T')[0],
-            reason: 'Family event',
-            substituteTeacherId: 'teacher_001',
-          },
-          status: 'pending',
-          priority: 'medium',
-          requesterId: 'teacher_003',
-          requesterName: 'Omar Khalid',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-1, 15),
-        },
-        {
-          id: 'approval_005',
-          type: 'student_request',
-          title: 'Payment Plan Modification',
-          description: 'Ahmad Nasser requests to switch to monthly payment plan',
-          payload: {
-            currentPlan: 'Pay-as-you-go',
-            requestedPlan: 'Monthly Basic',
-            startDate: isoDate(0, 0).toISOString().split('T')[0],
-          },
-          status: 'pending',
-          priority: 'high',
-          requesterId: 'student_003',
-          requesterName: 'Ahmad Nasser',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-2, 11),
-        },
-        {
-          id: 'approval_006',
-          type: 'teacher_change',
-          title: 'Additional Class Request',
-          description: 'Layla Mahmoud requests to add an extra advanced session',
-          payload: {
-            proposedDay: 5,
-            proposedTime: '14:00',
-            duration: 90,
-            roomId: 'room_004',
-          },
-          status: 'approved',
-          priority: 'medium',
-          requesterId: 'teacher_004',
-          requesterName: 'Layla Mahmoud',
-          reviewerId: 'user_001',
-          reviewerNote: 'Approved. Room 201 is available.',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-5, 10),
-          updatedAt: isoDate(-4, 9),
-        },
-        {
-          id: 'approval_007',
-          type: 'student_request',
-          title: 'Temporary Leave Request',
-          description: 'Youssef Karim requests 2-week leave for travel',
-          payload: {
-            startDate: isoDate(14, 0).toISOString().split('T')[0],
-            endDate: isoDate(28, 0).toISOString().split('T')[0],
-            reason: 'Family travel abroad',
-          },
-          status: 'approved',
-          priority: 'low',
-          requesterId: 'student_005',
-          requesterName: 'Youssef Karim',
-          reviewerId: 'user_002',
-          reviewerNote: 'Approved. Student can make up classes upon return.',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-7, 16),
-          updatedAt: isoDate(-6, 10),
-        },
-        {
-          id: 'approval_008',
-          type: 'room_change',
-          title: 'Equipment Upgrade Request',
-          description: 'Request for Room 102 projector installation',
-          payload: {
-            roomId: 'room_002',
-            equipment: 'Projector',
-            justification: 'Needed for multimedia lessons',
-          },
-          status: 'rejected',
-          priority: 'low',
-          requesterId: 'teacher_005',
-          requesterName: 'Yusuf Ibrahim',
-          reviewerId: 'user_001',
-          reviewerNote: 'Budget not available this quarter. Re-submit in Q2.',
-          orgId: DEFAULT_ORG_ID,
-          createdAt: isoDate(-10, 14),
-          updatedAt: isoDate(-8, 11),
-        },
-      ],
+    const groupData: Prisma.GroupCreateManyInput[] = groupsToSeed.map((g, i) => {
+      const id = `group_${String(i + 1).padStart(3, '0')}`;
+      groupIds[g.name] = id;
+      const roomName = groupToRoom[g.name] ?? mockRooms[0]?.name ?? 'Room 101';
+      const roomId = roomIds[roomName] ?? roomIds['Room 101'];
+      const teacherId = teacherIds[g.teacherName];
+      if (!teacherId) throw new Error(`Unknown teacher: ${g.teacherName}`);
+      return {
+        id,
+        tenantId: DEFAULT_TENANT_ID,
+        name: g.name,
+        teacherId,
+        roomId: roomId ?? null,
+        studentIds: [],
+        scheduleRule: { daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '10:30', roomId } as any,
+        color: '#F5A623',
+      };
     });
+    await prisma.group.createMany({ data: groupData });
+    console.log(`[ClassHub] Created ${groupData.length} groups`);
 
-    console.log('[Busala] Database seeded successfully with:');
-    console.log(`  - ${users.count} users`);
-    console.log(`  - ${teachers.count} teachers`);
-    console.log(`  - ${studentData.length} students`);
-    console.log(`  - ${rooms.count} rooms`);
-    console.log(`  - ${groups.count} groups`);
-    console.log(`  - ${lessonsData.length} lessons`);
-    console.log(`  - ${approvals.count} approvals`);
+    // ============================================
+    // 8. SEED STUDENTS
+    // ============================================
+    console.log('[ClassHub] Seeding students...');
+    const studentData: Prisma.StudentCreateManyInput[] = mockStudents.map((s, i) => {
+      const id = `student_${String(i + 1).padStart(3, '0')}`;
+      studentIds[s.name] = id;
+      const groupIdsForStudent = (s.groups ?? [])
+        .map((gName) => groupIds[gName])
+        .filter(Boolean);
+      return {
+        id,
+        tenantId: DEFAULT_TENANT_ID,
+        fullName: s.name,
+        email: s.email,
+        phone: s.phone ?? null,
+        status: (s.status === 'at-risk' ? 'at_risk' : s.status) as 'active' | 'at_risk' | 'inactive',
+        groupIds: groupIdsForStudent,
+        attendancePercent: s.attendancePercent,
+        balance: s.balance,
+        plan: s.plan,
+        enrolledDate: s.enrolledDate ? new Date(s.enrolledDate) : new Date(),
+      };
+    });
+    await prisma.student.createMany({ data: studentData });
+    console.log(`[ClassHub] Created ${studentData.length} students`);
+
+    // Update groups with studentIds
+    for (const g of groupsToSeed) {
+      const gid = groupIds[g.name];
+      if (!gid) continue;
+      const sids = (mockStudents ?? [])
+        .filter((s) => (s.groups ?? []).includes(g.name))
+        .map((s) => studentIds[s.name])
+        .filter(Boolean);
+      if (sids.length > 0) {
+        await prisma.group.update({
+          where: { id: gid },
+          data: { studentIds: sids },
+        });
+      }
+    }
+
+    // ============================================
+    // 9. SEED LESSONS
+    // ============================================
+    console.log('[ClassHub] Seeding lessons...');
+    const lessonsData: Prisma.LessonCreateManyInput[] = mockLessons.map((l, i) => {
+      const [h, m] = l.time.split(':').map(Number);
+      const durationMin = parseDuration(l.duration);
+      const startAt = todayAt(h, m);
+      const endAt = new Date(startAt.getTime() + durationMin * 60 * 1000);
+      const teacherId = teacherIds[l.teacher];
+      const roomId = roomIds[l.room];
+      const groupName = l.group;
+      const groupId = groupIds[groupName] ?? groupIds['Arabic Beginners A1'];
+      if (!teacherId) throw new Error(`Unknown teacher: ${l.teacher}`);
+      const status = l.status === 'in-progress' ? 'in_progress' : l.status === 'completed' ? 'completed' : 'upcoming';
+      return {
+        id: `lesson_${String(i + 1).padStart(3, '0')}`,
+        tenantId: DEFAULT_TENANT_ID,
+        title: l.title,
+        startAt,
+        endAt,
+        type: 'group' as const,
+        groupId: groupId ?? null,
+        teacherId,
+        roomId: roomId ?? null,
+        status,
+      };
+    });
+    await prisma.lesson.createMany({ data: lessonsData });
+    console.log(`[ClassHub] Created ${lessonsData.length} lessons`);
+
+    // Map approval requester names to IDs
+    const requesterToId = (name: string): string =>
+      teacherIds[name] ?? studentIds[name] ?? teacherIds['Ahmed Hassan'];
+
+    const approvalTypeMap: Record<string, 'teacher_change' | 'student_request' | 'room_change'> = {
+      'teacher-change': 'teacher_change',
+      'student-request': 'student_request',
+      'room-change': 'room_change',
+    };
+
+    // ============================================
+    // 10. SEED APPROVALS
+    // ============================================
+    console.log('[ClassHub] Seeding approvals...');
+    const approvalData: Prisma.ApprovalCreateManyInput[] = mockApprovals.map((a, i) => ({
+      id: `approval_${String(i + 1).padStart(3, '0')}`,
+      tenantId: DEFAULT_TENANT_ID,
+      type: approvalTypeMap[a.type] ?? 'teacher_change',
+      title: a.title,
+      description: a.description,
+      payload: {} as any,
+      status: a.status as 'pending' | 'approved' | 'rejected',
+      priority: a.priority as 'low' | 'medium' | 'high',
+      requesterId: requesterToId(a.requester),
+      requesterName: a.requester,
+    }));
+    await prisma.approval.createMany({ data: approvalData });
+    console.log(`[ClassHub] Created ${approvalData.length} approvals`);
+
+    // ============================================
+    // SEED SUMMARY
+    // ============================================
+    console.log('[ClassHub] ✓ Database seeded successfully!');
+    console.log('');
+    console.log('📊 Summary:');
+    console.log(`  • ${DEFAULT_PLANS.length} pricing plans`);
+    console.log(`  • 1 tenant (Demo School)`);
+    console.log(`  • 1 super admin user`);
+    console.log(`  • 3 workspace users`);
+    console.log(`  • ${teacherData.length} teachers`);
+    console.log(`  • ${roomData.length} rooms`);
+    console.log(`  • ${groupData.length} groups`);
+    console.log(`  • ${studentData.length} students`);
+    console.log(`  • ${lessonsData.length} lessons`);
+    console.log(`  • ${approvalData.length} approvals`);
+    console.log('');
+    console.log('🔗 Access your tenant at:');
+    console.log(`  • Local: http://localhost:3000`);
+    console.log(`  • Subdomain: http://${DEFAULT_TENANT_SUBDOMAIN}.localhost:3000`);
   } catch (error) {
-    console.error('[Busala] Error seeding database:', error);
+    console.error('[ClassHub] Error seeding database:', error);
     throw error;
   }
 }
@@ -656,11 +444,11 @@ export async function seedDatabase(): Promise<void> {
 if (require.main === module) {
   seedDatabase()
     .then(() => {
-      console.log('[Busala] Seed completed successfully');
+      console.log('[ClassHub] Seed completed successfully');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('[Busala] Seed failed:', error);
+      console.error('[ClassHub] Seed failed:', error);
       process.exit(1);
     });
 }

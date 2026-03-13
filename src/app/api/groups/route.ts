@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: GROUPS LIST & CREATE
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = url.searchParams.get('search')?.toLowerCase();
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: any = { tenantId: user.tenantId };
 
     if (teacherIdFilter) {
       where.teacherId = teacherIdFilter;
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate name
     const existing = await prisma.group.findFirst({
-      where: { name, orgId: user.orgId },
+      where: { name, tenantId: user.tenantId },
     });
 
     if (existing) {
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
         studentIds,
         scheduleRule: scheduleRule as any,
         color,
-        orgId: user.orgId,
+        tenantId: user.tenantId,
       },
     });
 

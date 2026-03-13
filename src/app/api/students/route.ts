@@ -1,6 +1,9 @@
 // ============================================
+
 // BUSALA API: STUDENTS LIST & CREATE
 // ============================================
+
+export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = url.searchParams.get('search')?.toLowerCase();
 
     // Build where clause
-    const where: any = { orgId: user.orgId };
+    const where: any = { tenantId: user.tenantId };
 
     if (statusFilter && statusFilter !== 'all') {
       where.status = statusFilter;
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate email
     const existing = await prisma.student.findFirst({
-      where: { email, orgId: user.orgId },
+      where: { email, tenantId: user.tenantId },
     });
 
     if (existing) {
@@ -108,7 +111,7 @@ export async function POST(request: NextRequest) {
         attendancePercent: 100,
         balance,
         plan,
-        orgId: user.orgId,
+        tenantId: user.tenantId,
       },
     });
 

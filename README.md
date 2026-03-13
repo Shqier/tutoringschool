@@ -1,4 +1,4 @@
-# Busala - School Management Dashboard
+# ClassHub - School Management Platform
 
 A modern school management system built with Next.js, TypeScript, and PostgreSQL. Features include lesson scheduling, teacher availability management, student enrollment, and resource allocation.
 

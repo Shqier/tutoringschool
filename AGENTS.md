@@ -1,6 +1,6 @@
 # Busala - AI Coding Agent Guide
 
-Busala is a school management system (SMS) built as a full-stack web application using Next.js, TypeScript, PostgreSQL, and Prisma. It provides CRUD operations for managing teachers, students, groups, rooms, lessons, and approvals with scheduling conflict detection and teacher availability enforcement.
+Busala is a school management system (SMS) built as a full-stack web application using Next.js, TypeScript, PostgreSQL, Prisma, and Auth0. It provides CRUD operations for managing teachers, students, groups, rooms, lessons, and approvals with scheduling conflict detection, teacher availability enforcement, and role-based access control.
 
 ---
 
@@ -15,15 +15,16 @@ Busala is a school management system (SMS) built as a full-stack web application
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 16.1.5 (App Router) |
+| Framework | Next.js 16.1.6 (App Router) |
 | Language | TypeScript 5 (strict mode) |
 | Database | PostgreSQL 14+ |
 | ORM | Prisma 7.3.0 |
+| Authentication | Auth0 (@auth0/nextjs-auth0) |
 | Styling | Tailwind CSS v4 |
 | UI Components | shadcn/ui (Radix UI primitives) |
 | Icons | lucide-react |
 | Forms | react-hook-form + Zod |
-| Testing | Vitest |
+| Testing | Vitest + @testing-library/react |
 | Linting | ESLint (Next.js config) |
 
 ---
@@ -34,12 +35,11 @@ Busala is a school management system (SMS) built as a full-stack web application
 prisma/
 ├── schema.prisma           # Database schema definition
 ├── migrations/             # Prisma migration files
-├── seed.ts                 # Legacy seed script
-└── prisma.config.ts        # Prisma configuration
+└── prisma.config.ts        # Prisma CLI configuration
 
 src/
 ├── app/                    # Next.js App Router
-│   ├── (app)/              # Route group with AppShell layout
+│   ├── (app)/              # Route group with AppShell layout (protected)
 │   │   ├── page.tsx        # Dashboard home
 │   │   ├── layout.tsx      # AppShell wrapper
 │   │   ├── teachers/       # Teachers page
@@ -50,47 +50,66 @@ src/
 │   │   ├── approvals/      # Approvals page
 │   │   ├── scheduling/     # Scheduling page
 │   │   └── settings/       # Settings page
+│   ├── (marketing)/        # Public marketing pages
+│   │   ├── features/       # Features page
+│   │   ├── pricing/        # Pricing page
+│   │   ├── contact/        # Contact page
+│   │   └── layout.tsx      # Marketing layout
 │   ├── api/                # API routes (Route Handlers)
-│   │   ├── teachers/       # /api/teachers
-│   │   ├── students/       # /api/students
-│   │   ├── groups/         # /api/groups
+│   │   ├── auth/           # Auth0 routes ([...auth0]/route.ts)
+│   │   ├── teachers/       # /api/teachers + tests
+│   │   ├── students/       # /api/students + tests
+│   │   ├── groups/         # /api/groups + tests
 │   │   ├── rooms/          # /api/rooms
-│   │   ├── lessons/        # /api/lessons
+│   │   ├── lessons/        # /api/lessons + tests
 │   │   ├── approvals/      # /api/approvals
-│   │   └── scheduling/     # /api/scheduling
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Root redirect
+│   │   ├── scheduling/     # /api/scheduling
+│   │   └── debug/          # Debug endpoints
+│   ├── login/              # Login page
+│   ├── signup/             # Signup page
+│   ├── layout.tsx          # Root layout with Auth0 provider
+│   ├── page.tsx            # Root redirect to /login
 │   └── globals.css         # Design tokens & CSS variables
 ├── components/
 │   ├── app/                # Application-level components
 │   │   ├── AppShell.tsx    # Main layout wrapper
 │   │   ├── PageHeader.tsx  # Page header component
 │   │   ├── DataTableShell.tsx
-│   │   └── ...
+│   │   ├── ConfirmDialog.tsx
+│   │   └── index.ts        # Barrel export
 │   ├── dashboard/          # Dashboard-specific components
 │   │   ├── TopNav.tsx
 │   │   ├── SidebarNav.tsx
-│   │   └── ...
+│   │   ├── StatMiniCard.tsx
+│   │   └── index.ts
 │   ├── teachers/           # Teacher-specific components
 │   ├── students/           # Student-specific components
 │   ├── groups/             # Group-specific components
 │   ├── rooms/              # Room-specific components
 │   ├── lessons/            # Lesson-specific components
+│   ├── marketing/          # Marketing page components
 │   └── ui/                 # shadcn/ui components (button, card, etc.)
 ├── hooks/                  # React custom hooks
-│   └── useEntityDialog.ts
+│   ├── useEntityDialog.ts
+│   └── useAuth.ts
 ├── lib/                    # Application logic
 │   ├── api/                # API client
 │   │   ├── client.ts       # Typed fetch wrapper
 │   │   ├── types.ts        # API type definitions
-│   │   └── hooks.ts        # React Query hooks
+│   │   ├── hooks.ts        # React Query/SWR hooks
+│   │   └── index.ts
+│   ├── auth/               # Auth0 configuration
+│   │   ├── config.ts       # Auth0 config & validation
+│   │   └── session.ts      # Session helpers
 │   ├── db/                 # Database layer
 │   │   ├── prisma.ts       # Prisma client singleton
 │   │   ├── seed-prisma.ts  # Database seeding
-│   │   └── types.ts        # Database types
+│   │   ├── types.ts        # Database types
+│   │   └── index.ts
 │   ├── scheduling/         # Scheduling logic
 │   │   ├── conflicts.ts    # Conflict detection
-│   │   └── teacher-availability.ts
+│   │   ├── teacher-availability.ts
+│   │   └── __tests__/
 │   ├── test/               # Test utilities
 │   │   ├── setup.ts        # Vitest setup
 │   │   └── db-helpers.ts   # Test database helpers
@@ -100,8 +119,9 @@ src/
 │   └── utils.ts            # General utilities (cn function)
 ├── types/
 │   └── dashboard.ts        # Shared TypeScript interfaces
-└── data/
-    └── mock-data.ts        # Mock data for development
+├── data/
+│   └── mock-data.ts        # Mock data for development
+└── middleware.ts           # Next.js middleware (Auth0 + custom auth)
 
 ref/                        # Reference documentation
 ├── ARCHITECTURE.md
@@ -110,7 +130,7 @@ ref/                        # Reference documentation
 └── DESIGN_TOKENS.md
 
 scripts/                    # Utility scripts
-└── verify-availability.ts  # Availability verification script
+└── verify-availability.ts
 ```
 
 ---
@@ -184,13 +204,15 @@ No Prettier is configured; follow ESLint auto-fixes for formatting.
 |------|---------|
 | `package.json` | NPM dependencies and scripts |
 | `tsconfig.json` | TypeScript configuration (strict mode, path alias `@/*`) |
-| `next.config.ts` | Next.js configuration (Turbopack enabled) |
+| `next.config.ts` | Next.js configuration (Turbopack enabled by default) |
 | `vitest.config.ts` | Vitest test configuration |
 | `eslint.config.mjs` | ESLint configuration (Next.js core-web-vitals + TS) |
 | `prisma/schema.prisma` | Database schema |
 | `prisma.config.ts` | Prisma CLI configuration |
-| `.env` | Environment variables (not committed) |
+| `.env` / `.env.local` | Environment variables (not committed) |
 | `.env.example` | Environment variable template |
+| `components.json` | shadcn/ui configuration |
+| `postcss.config.mjs` | PostCSS configuration for Tailwind v4 |
 
 ---
 
@@ -309,17 +331,34 @@ PATCH  /api/teachers/[id]     # Update
 DELETE /api/teachers/[id]     # Delete
 ```
 
-### Authentication (Development)
+### Authentication
 
-Header-based authentication for development:
+The application uses **Auth0** for authentication with fallback for development:
 
+**Production (Auth0)**:
+- Configured via `@auth0/nextjs-auth0` package
+- Routes: `/api/auth/login`, `/api/auth/callback`, `/api/auth/logout`
+- Session stored in `appSession` cookie
+- Middleware validates session and sets headers for API routes
+
+**Required Environment Variables**:
+```
+AUTH0_SECRET
+AUTH0_BASE_URL
+AUTH0_ISSUER_BASE_URL
+AUTH0_CLIENT_ID
+AUTH0_CLIENT_SECRET
+AUTH0_SCOPE
+AUTH0_AUDIENCE (optional)
+```
+
+**Development Fallback**:
+Headers can be set directly for testing:
 ```
 x-user-role: admin | manager | teacher | staff
 x-user-id: <user-id>
 x-org-id: <org-id>
 ```
-
-Default dev headers are set in `src/lib/api/client.ts`.
 
 ### Authorization (Role-Based)
 
@@ -347,7 +386,7 @@ Use `requireRole(request, minimumRole)` from `api-utils.ts`.
 }
 ```
 
-**Error (400/403/404/409/500)**:
+**Error (400/401/403/404/409/500)**:
 ```json
 { "error": { "code": "ERROR_CODE", "message": "...", "details": [...] } }
 ```
@@ -397,10 +436,13 @@ To bypass availability checks (but not double-booking):
 **AvailabilityException** (stored in `Teacher.availabilityExceptions`):
 ```typescript
 {
-  startDate: string;    // ISO 8601 DateTime (UTC)
-  endDate: string;      // ISO 8601 DateTime (UTC)
-  isAllDay: boolean;
+  id: string;           // UUID
   type: "unavailable" | "available";
+  startDate: string;    // YYYY-MM-DD
+  endDate: string;      // YYYY-MM-DD
+  allDay: boolean;
+  startTime?: string;   // HH:mm (if !allDay)
+  endTime?: string;     // HH:mm (if !allDay)
   reason?: string;
 }
 ```
@@ -419,21 +461,22 @@ Use `checkAllConflicts()` from `src/lib/scheduling/conflicts.ts`.
 
 ### Colors (CSS Variables)
 
-| Token | Light Mode | Usage |
-|-------|------------|-------|
-| `--busala-gold` | #F5A623 | Primary accent |
-| `--busala-bg-primary` | #F8F9FA | Page background |
-| `--busala-bg-card` | #FFFFFF | Card background |
-| `--busala-text-primary` | #1A1D24 | Primary text |
-| `--busala-text-muted` | rgba(0,0,0,0.6) | Secondary text |
+| Token | Light Mode | Dark Mode | Usage |
+|-------|------------|-----------|-------|
+| `--busala-gold` | #F5A623 | #F5A623 | Primary accent |
+| `--busala-bg-primary` | #F8F9FA | #0B0D10 | Page background |
+| `--busala-bg-card` | #FFFFFF | #14171C | Card background |
+| `--busala-text-primary` | #1A1D24 | #FFFFFF | Primary text |
+| `--busala-text-muted` | rgba(0,0,0,0.6) | rgba(255,255,255,0.6) | Secondary text |
 
 ### Layout
 
-- **TopNav**: Fixed, 72px height
-- **Sidebar**: Fixed left, 240px width
+- **TopNav**: Fixed, 72px height (`--busala-topnav-height`)
+- **Sidebar**: Fixed left, 240px width (`--busala-sidebar-width`)
 - **Main content**: `ml-[240px] pt-[72px]`
 - **Card radius**: 16px
 - **Item radius**: 12px
+- **Spacing**: 8px grid (8, 12, 16, 24, 32)
 
 ### Utility Classes
 
@@ -445,14 +488,26 @@ Use `checkAllConflicts()` from `src/lib/scheduling/conflicts.ts`.
 
 ---
 
+## Middleware & Authentication Flow
+
+The `src/middleware.ts` file handles:
+
+1. **Public path detection**: Routes like `/`, `/login`, `/api/auth/*` bypass auth
+2. **Session validation**: Checks `appSession` cookie (Auth0)
+3. **Header injection**: Sets `x-user-id`, `x-user-role`, `x-org-id`, `x-user-email` for API routes
+4. **Redirect handling**: Unauthenticated users redirect to `/login`
+
+---
+
 ## Security Considerations
 
-1. **Environment variables**: Never commit `.env`. Use `.env.example` as template.
+1. **Environment variables**: Never commit `.env` or `.env.local`. Use `.env.example` as template.
 2. **Database credentials**: Store in `DATABASE_URL` env var only.
-3. **Authentication**: Currently header-based for development. Production should use JWT or session-based auth.
+3. **Authentication**: Auth0 for production, fallback to header-based auth for development.
 4. **Authorization**: Always use `requireRole()` helper in API routes.
 5. **Input validation**: All API inputs validated with Zod schemas.
 6. **SQL Injection**: Prevented by Prisma ORM query building.
+7. **Session Security**: Auth0 manages session securely with httpOnly cookies.
 
 ---
 
@@ -500,7 +555,7 @@ Additional documentation in `ref/` directory:
 ### Database Connection
 
 **Issue**: `DATABASE_URL` not found  
-**Solution**: Copy `.env.example` to `.env` and configure your PostgreSQL connection string.
+**Solution**: Copy `.env.example` to `.env.local` and configure your PostgreSQL connection string.
 
 ### Prisma Client
 
@@ -517,6 +572,14 @@ Additional documentation in `ref/` directory:
 **Issue**: TypeScript errors after schema change  
 **Solution**: Run `npx prisma generate` to regenerate types, then restart TypeScript server.
 
+### Auth0 Configuration
+
+**Issue**: Auth0 authentication fails  
+**Solution**: 
+1. Ensure all `AUTH0_*` environment variables are set
+2. Verify callback URLs in Auth0 dashboard match your app
+3. Check that `AUTH0_SECRET` is at least 32 characters
+
 ---
 
 ## Quick Reference
@@ -528,9 +591,10 @@ Additional documentation in `ref/` directory:
 | 200 | Successful GET, PATCH, DELETE |
 | 201 | Successful POST (created) |
 | 400 | Validation error |
+| 401 | Unauthorized (no valid session) |
 | 403 | Forbidden (insufficient role) |
 | 404 | Resource not found |
-| 409 | Conflict (duplicate, scheduling conflict) |
+| 409 | Conflict (duplicate or scheduling conflict) |
 | 500 | Internal server error |
 
 ### Common Import Patterns
@@ -553,4 +617,7 @@ import type { Teacher, CreateTeacherInput } from '@/lib/api/types';
 
 // UI components
 import { Button, Card, Dialog } from '@/components/ui';
+
+// Dashboard components
+import { TopNav, SidebarNav } from '@/components/dashboard';
 ```

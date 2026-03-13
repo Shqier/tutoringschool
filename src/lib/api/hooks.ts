@@ -208,8 +208,8 @@ export function useLessons(query?: LessonsQuery) {
   // Normalize the response
   const normalizedData: NormalizedLessonsResponse | null = result.data
     ? {
-        lessons: result.data.data,
-        total: result.data.pagination.total,
+        lessons: result.data.data || [],
+        total: result.data.pagination?.total || 0,
       }
     : null;
 
@@ -255,8 +255,8 @@ export function useTeachers(query?: TeachersQuery) {
 
   const normalizedData: NormalizedTeachersResponse | null = result.data
     ? {
-        teachers: result.data.data,
-        total: result.data.pagination.total,
+        teachers: result.data.data || [],
+        total: result.data.pagination?.total || 0,
       }
     : null;
 
@@ -297,8 +297,8 @@ export function useGroups(query?: GroupsQuery) {
 
   const normalizedData: NormalizedGroupsResponse | null = result.data
     ? {
-        groups: result.data.data,
-        total: result.data.pagination.total,
+        groups: result.data.data || [],
+        total: result.data.pagination?.total || 0,
       }
     : null;
 
@@ -346,8 +346,8 @@ export function useStudents(query?: StudentsQuery) {
 
   const normalizedData: NormalizedStudentsResponse | null = result.data
     ? {
-        students: result.data.data,
-        total: result.data.pagination.total,
+        students: result.data.data || [],
+        total: result.data.pagination?.total || 0,
       }
     : null;
 
@@ -388,8 +388,8 @@ export function useRooms(query?: RoomsQuery) {
 
   const normalizedData: NormalizedRoomsResponse | null = result.data
     ? {
-        rooms: result.data.data,
-        total: result.data.pagination.total,
+        rooms: result.data.data || [],
+        total: result.data.pagination?.total || 0,
       }
     : null;
 
@@ -420,9 +420,9 @@ export function useApprovals(query?: ApprovalsQuery) {
 
   const normalizedData: NormalizedApprovalsResponse | null = result.data
     ? {
-        approvals: result.data.data,
-        total: result.data.pagination.total,
-        counts: result.data.counts,
+        approvals: result.data.data || [],
+        total: result.data.pagination?.total || 0,
+        counts: result.data.counts || { total: 0, pending: 0, approved: 0, rejected: 0 },
       }
     : null;
 

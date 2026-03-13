@@ -36,7 +36,12 @@ import { topNavItems } from '@/data/mock-data';
 import { useAuth, useUserRole } from '@/hooks/useAuth';
 import type { NavItem } from '@/types/dashboard';
 
-export function TopNav() {
+interface TopNavProps {
+  tenantName?: string;
+  tenantLogo?: string | null;
+}
+
+export function TopNav({ tenantName = 'ClassHub', tenantLogo }: TopNavProps) {
   const [isDark, setIsDark] = React.useState(true);
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [addLessonOpen, setAddLessonOpen] = React.useState(false);
@@ -81,7 +86,7 @@ export function TopNav() {
   
   // Get user info from auth
   const userName = user?.name || user?.email?.split('@')[0] || 'User';
-  const userAvatar = user?.picture;
+  const userAvatar = undefined; // Avatar not implemented in custom auth yet
   const userEmail = user?.email || '';
 
   // Mock notifications
@@ -121,7 +126,7 @@ export function TopNav() {
           <div className="w-8 h-8 rounded-lg bg-busala-bg-logo flex items-center justify-center">
             <span className="text-busala-gold font-bold text-lg">B</span>
           </div>
-          <span className="text-busala-text-primary text-lg font-semibold">Busala</span>
+          <span className="text-busala-text-primary text-lg font-semibold">{tenantName}</span>
         </Link>
 
         {/* Center: Navigation Items */}

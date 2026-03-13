@@ -5,13 +5,15 @@ import { TopNav, SidebarNav } from '@/components/dashboard';
 
 interface AppShellProps {
   children: React.ReactNode;
+  tenantName?: string;
+  tenantLogo?: string | null;
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, tenantName, tenantLogo }: AppShellProps) {
   return (
     <div className="min-h-screen busala-bg-gradient">
       {/* Top Navigation */}
-      <TopNav />
+      <TopNav tenantName={tenantName} tenantLogo={tenantLogo} />
 
       {/* Sidebar */}
       <SidebarNav />

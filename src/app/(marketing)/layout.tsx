@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: 'Busala - School Management System',
+  title: 'ClassHub - School Management Platform',
   description: 'Streamline your school operations with our comprehensive management platform',
 };
 
@@ -23,7 +23,7 @@ export default function MarketingLayout({
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F5A623] to-[#D4891A] flex items-center justify-center">
                 <span className="text-[#0B0D10] font-bold">B</span>
               </div>
-              <span className="text-white font-semibold text-xl">Busala</span>
+              <span className="text-white font-semibold text-xl">ClassHub</span>
             </Link>
 
             {/* Nav Links */}
@@ -69,7 +69,7 @@ export default function MarketingLayout({
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F5A623] to-[#D4891A] flex items-center justify-center">
                   <span className="text-[#0B0D10] font-bold">B</span>
                 </div>
-                <span className="text-white font-semibold text-xl">Busala</span>
+                <span className="text-white font-semibold text-xl">ClassHub</span>
               </Link>
               <p className="text-gray-400 text-sm max-w-xs">
                 Streamline your school operations with our comprehensive management platform.
@@ -97,7 +97,7 @@ export default function MarketingLayout({
 
           <div className="border-t border-white/5 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} Busala. All rights reserved.
+              © {new Date().getFullYear()} ClassHub. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <Link href="#" className="text-gray-500 hover:text-white text-sm">Privacy</Link>

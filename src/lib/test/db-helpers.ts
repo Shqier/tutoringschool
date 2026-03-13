@@ -3,7 +3,7 @@
 // ============================================
 
 import { prisma } from '../db/prisma';
-import { DEFAULT_ORG_ID } from '../db/seed-prisma';
+import { DEFAULT_TENANT_ID } from '../db/seed-prisma';
 
 /**
  * Clean all data from the database
@@ -48,7 +48,7 @@ export async function createTestTeacher(overrides: any = {}) {
       ],
       hoursThisWeek: 0,
       maxHours: 25,
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
       ...overrides,
     },
   });
@@ -65,7 +65,7 @@ export async function createTestRoom(overrides: any = {}) {
       capacity: 20,
       status: 'available',
       equipment: [],
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
       ...overrides,
     },
   });
@@ -81,7 +81,7 @@ export async function createTestGroup(teacherId: string, overrides: any = {}) {
       name: `Test Group ${randomId}`,
       teacherId,
       studentIds: [],
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
       ...overrides,
     },
   });
@@ -102,7 +102,7 @@ export async function createTestStudent(overrides: any = {}) {
       balance: 0,
       plan: 'Monthly Basic',
       enrolledDate: new Date(),
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
       ...overrides,
     },
   });
@@ -125,7 +125,7 @@ export async function createTestLesson(
       type: 'one_on_one',
       teacherId,
       status: 'upcoming',
-      orgId: DEFAULT_ORG_ID,
+      tenantId: DEFAULT_TENANT_ID,
       ...overrides,
     },
   });
@@ -138,7 +138,7 @@ export function createTestHeaders(overrides: Record<string, string> = {}) {
   return {
     'x-user-role': 'admin',
     'x-user-id': 'user_test',
-    'x-org-id': DEFAULT_ORG_ID,
+    'x-org-id': DEFAULT_TENANT_ID,
     'Content-Type': 'application/json',
     ...overrides,
   };
