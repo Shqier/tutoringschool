@@ -13,15 +13,18 @@ datasource db {
 // USER MODEL
 // ============================================
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      UserRole
-  orgId     String
-  avatarUrl String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  hashedPassword String?  // Nullable for OAuth-only users
+  role           UserRole
+  orgId          String
+  avatarUrl      String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessions Session[]
 
   @@index([orgId])
   @@index([email])
@@ -36,6 +39,23 @@ enum UserRole {
 }
 
 // ============================================
+// SESSION MODEL (for authentication)
+// ============================================
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+// ============================================
 // TEACHER MODEL (with JSON-based availability)
 // ============================================
 model Teacher {
@@ -45,17 +65,17 @@ model Teacher {
   phone                   String?
   subjects                String[]
   status                  TeacherStatus
-  
+
   // Availability - enhanced JSON structure
   // [{"day": "monday", "slots": [{"start": "14:00", "end": "18:00"}]}]
   weeklyAvailability      Json               @default("[]")
-  
+
   // Monthly confirmation tracking
   availabilityConfirmedAt DateTime?
   availabilityConfirmedForMonth Int?
   availabilityConfirmedForYear  Int?
   availabilityStatus      AvailabilityStatus @default(pending)
-  
+
   // Legacy fields (for backward compatibility)
   availabilityExceptions  Json               @default("[]")
   hoursThisWeek           Float              @default(0)
