@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth';
+import { verifyPassword, createSession, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/lib/auth/session';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -46,9 +46,8 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
 
-    await setSessionCookie(token);
-
-    return Response.json({
+    // Create response with cookie
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -57,6 +56,17 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     });
+
+    // Set cookie on response
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION_MS / 1000,
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return Response.json(

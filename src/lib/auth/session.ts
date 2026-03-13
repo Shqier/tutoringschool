@@ -7,8 +7,8 @@ import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from '@oslojs/enco
 import { sha256 } from '@oslojs/crypto/sha2';
 import type { User, Session } from '@prisma/client';
 
-const SESSION_COOKIE_NAME = 'busala_session';
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+export const SESSION_COOKIE_NAME = 'busala_session';
+export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 export type SessionValidationResult =
   | { session: Session; user: User }
