@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { verifyPassword, createSession, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/lib/auth/session';
+import { createSession, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/lib/auth/session';
+import { verifyPassword } from '@/lib/auth/password';
 import { z } from 'zod';
 
 const loginSchema = z.object({
