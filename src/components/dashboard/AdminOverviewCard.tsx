@@ -16,7 +16,7 @@ import type { StatCard } from '@/types/dashboard';
 
 function StatsSkeleton() {
   return (
-    <div className="grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       {[1, 2, 3, 4, 5].map((i) => (
         <Skeleton key={i} className="h-24 w-full rounded-xl" />
       ))}
@@ -82,7 +82,7 @@ export function AdminOverviewCard() {
 
   return (
     <div className="busala-card p-6">
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
         {/* User Info */}
         <div className="flex items-center gap-4">
           {loadingMe ? (
@@ -107,7 +107,7 @@ export function AdminOverviewCard() {
 
         {/* Hide Info Toggle */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-busala-text-subtle">Hide info</span>
+          <span className="text-sm text-busala-text-subtle hidden sm:inline">Hide info</span>
           <Switch
             checked={!showInfo}
             onCheckedChange={(checked) => setShowInfo(!checked)}
@@ -122,7 +122,7 @@ export function AdminOverviewCard() {
           {isLoading ? (
             <StatsSkeleton />
           ) : (
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {stats.map((stat) => (
                 <StatMiniCard key={stat.id} stat={stat} />
               ))}

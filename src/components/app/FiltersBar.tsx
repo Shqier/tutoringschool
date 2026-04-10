@@ -40,16 +40,16 @@ export function FiltersBar({
   className = '',
 }: FiltersBarProps) {
   return (
-    <div className={`flex items-center gap-3 mb-6 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-3 mb-6 ${className}`}>
       {/* Search Input */}
-      <div className="relative flex-1 max-w-sm">
+      <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-busala-text-subtle" />
         <Input
           type="text"
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={(e) => onSearchChange?.(e.target.value)}
-          className="pl-9 h-10 bg-busala-hover-bg border-busala-border-glass text-busala-text-primary placeholder:text-busala-text-subtle focus:border-busala-gold/50 focus:ring-busala-gold/20"
+          className="pl-9 h-11 bg-busala-hover-bg border-busala-border-glass text-busala-text-primary placeholder:text-busala-text-subtle focus:border-busala-gold/50 focus:ring-busala-gold/20"
         />
       </div>
 
@@ -60,7 +60,7 @@ export function FiltersBar({
           value={filter.value}
           onValueChange={filter.onChange}
         >
-          <SelectTrigger className="w-[160px] h-10 bg-busala-hover-bg border-busala-border-glass text-busala-text-primary focus:border-busala-gold/50 focus:ring-busala-gold/20">
+          <SelectTrigger className="w-full sm:w-[160px] h-11 bg-busala-hover-bg border-busala-border-glass text-busala-text-primary focus:border-busala-gold/50 focus:ring-busala-gold/20">
             <SelectValue placeholder={filter.placeholder} />
           </SelectTrigger>
           <SelectContent className="bg-card border-border">

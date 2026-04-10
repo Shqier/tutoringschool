@@ -22,19 +22,19 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
         <h1 className="text-xl font-semibold text-busala-text-primary">{title}</h1>
         {subtitle && (
           <p className="text-sm text-busala-text-subtle mt-1">{subtitle}</p>
         )}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {children}
         {actionLabel && (
           <Button
             onClick={onAction}
-            className="h-[38px] px-4 text-sm font-medium text-white rounded-full busala-gradient-gold hover:opacity-90 transition-opacity"
+            className="h-11 px-4 text-sm font-medium text-white rounded-full busala-gradient-gold hover:opacity-90 transition-opacity"
             style={{
               boxShadow: '0 4px 12px rgba(245, 166, 35, 0.3)',
             }}

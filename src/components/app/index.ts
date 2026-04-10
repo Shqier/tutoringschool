@@ -3,6 +3,7 @@
 // ============================================
 
 export { AppShell } from './AppShell';
+export { BottomNav } from './BottomNav';
 export { PageHeader } from './PageHeader';
 export { FiltersBar } from './FiltersBar';
 export { DataTableShell, DataTableRow } from './DataTableShell';

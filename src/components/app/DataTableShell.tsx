@@ -85,7 +85,7 @@ export function DataTableRow({
   return (
     <div
       className={`
-        flex items-center gap-4 h-14 px-4 border-b border-busala-border-glass transition-colors
+        flex items-center gap-4 min-h-[56px] px-4 border-b border-busala-border-glass transition-colors
         hover:bg-busala-hover-bg cursor-pointer
         ${className}
       `}

@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Menu,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { Button } from '@/components/ui/button';
@@ -38,9 +39,10 @@ import type { NavItem } from '@/config/navigation';
 interface TopNavProps {
   userName?: string;
   userAvatar?: string;
+  onMenuToggle?: () => void;
 }
 
-export function TopNav({ userName: userNameProp, userAvatar }: TopNavProps) {
+export function TopNav({ userName: userNameProp, userAvatar, onMenuToggle }: TopNavProps) {
   const { data: meData } = useMe();
   const userName = userNameProp ?? meData?.user?.name ?? 'User';
   const userEmail = meData?.user?.email ?? '';
@@ -88,14 +90,25 @@ export function TopNav({ userName: userNameProp, userAvatar }: TopNavProps) {
     <header
       className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-busala-bg-nav border-b border-busala-border-subtle"
     >
-      <div className="flex items-center justify-between h-full px-8">
-        {/* Left: Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-busala-bg-logo flex items-center justify-center">
-            <span className="text-busala-gold font-bold text-lg">B</span>
-          </div>
-          <span className="text-busala-text-primary text-lg font-semibold">Busala</span>
-        </Link>
+      <div className="flex items-center justify-between h-full px-4 md:px-8">
+        {/* Left: Hamburger (mobile) + Logo */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuToggle}
+            className="md:hidden h-11 w-11 text-busala-text-muted hover:text-busala-text-primary hover:bg-busala-hover-bg"
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-busala-bg-logo flex items-center justify-center">
+              <span className="text-busala-gold font-bold text-lg">B</span>
+            </div>
+            <span className="text-busala-text-primary text-lg font-semibold">Busala</span>
+          </Link>
+        </div>
 
         {/* Center: Navigation Items */}
         <nav className="hidden md:flex items-center gap-1">
@@ -130,13 +143,13 @@ export function TopNav({ userName: userNameProp, userAvatar }: TopNavProps) {
           {/* Add Lesson Button */}
           <Button
             onClick={handleAddLesson}
-            className="h-[38px] px-4 text-sm font-medium text-white rounded-full busala-gradient-gold hover:opacity-90 transition-opacity"
+            className="h-[44px] w-[44px] md:h-[38px] md:w-auto md:px-4 text-sm font-medium text-white rounded-full busala-gradient-gold hover:opacity-90 transition-opacity"
             style={{
               boxShadow: '0 4px 12px rgba(245, 166, 35, 0.3)',
             }}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Lesson
+            <Plus className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Add Lesson</span>
           </Button>
 
           {/* User Avatar with Dropdown */}
