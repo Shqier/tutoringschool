@@ -587,9 +587,67 @@ model Deal {
 
   pipeline     Pipeline      @relation(fields: [pipelineId], references: [id])
   stage        PipelineStage @relation(fields: [stageId], references: [id])
+  activities   Activity[]
 
   @@index([pipelineId])
   @@index([stageId])
   @@index([orgId])
   @@map("deals")
+}
+
+// ============================================
+// CRM: CONTACT MODEL
+// ============================================
+model Contact {
+  id          String     @id @default(uuid())
+  fullName    String
+  email       String?
+  phone       String?
+  company     String?
+  title       String?
+  notes       String?
+  orgId       String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  activities  Activity[]
+
+  @@index([orgId])
+  @@index([email])
+  @@map("contacts")
+}
+
+// ============================================
+// CRM: ACTIVITY MODEL
+// ============================================
+model Activity {
+  id          String       @id @default(uuid())
+  type        ActivityType
+  title       String
+  notes       String?
+  contactId   String?
+  dealId      String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdById String?
+  orgId       String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  contact     Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  deal        Deal?        @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([dueDate])
+  @@index([completedAt])
+  @@map("activities")
+}
+
+enum ActivityType {
+  note
+  call
+  email
+  meeting
 }
