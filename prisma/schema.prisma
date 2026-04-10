@@ -13,15 +13,18 @@ datasource db {
 // USER MODEL
 // ============================================
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      UserRole
-  orgId     String
-  avatarUrl String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  hashedPassword String?  // Nullable for OAuth-only users
+  role           UserRole
+  orgId          String
+  avatarUrl      String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessions Session[]
 
   @@index([orgId])
   @@index([email])
@@ -36,6 +39,23 @@ enum UserRole {
 }
 
 // ============================================
+// SESSION MODEL (for authentication)
+// ============================================
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+// ============================================
 // TEACHER MODEL (with JSON-based availability)
 // ============================================
 model Teacher {
@@ -45,17 +65,17 @@ model Teacher {
   phone                   String?
   subjects                String[]
   status                  TeacherStatus
-  
+
   // Availability - enhanced JSON structure
   // [{"day": "monday", "slots": [{"start": "14:00", "end": "18:00"}]}]
   weeklyAvailability      Json               @default("[]")
-  
+
   // Monthly confirmation tracking
   availabilityConfirmedAt DateTime?
   availabilityConfirmedForMonth Int?
   availabilityConfirmedForYear  Int?
   availabilityStatus      AvailabilityStatus @default(pending)
-  
+
   // Legacy fields (for backward compatibility)
   availabilityExceptions  Json               @default("[]")
   hoursThisWeek           Float              @default(0)
@@ -503,4 +523,73 @@ model UserPreferences {
   updatedAt     DateTime @updatedAt
 
   @@map("user_preferences")
+}
+
+// ============================================
+// CRM: PIPELINE MODEL
+// ============================================
+model Pipeline {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  orgId       String
+  isDefault   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  stages      PipelineStage[]
+  deals       Deal[]
+
+  @@index([orgId])
+  @@map("pipelines")
+}
+
+// ============================================
+// CRM: PIPELINE STAGE MODEL
+// ============================================
+model PipelineStage {
+  id          String   @id @default(uuid())
+  pipelineId  String
+  name        String
+  color       String   @default("#6366f1")
+  order       Int
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pipeline    Pipeline  @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals       Deal[]
+
+  @@index([pipelineId])
+  @@index([orgId])
+  @@map("pipeline_stages")
+}
+
+// ============================================
+// CRM: DEAL MODEL
+// ============================================
+model Deal {
+  id           String      @id @default(uuid())
+  title        String
+  value        Float?
+  currency     String      @default("USD")
+  ownerId      String?     // userId of deal owner
+  ownerName    String?
+  pipelineId   String
+  stageId      String
+  orgId        String
+  notes        String?
+  closedAt     DateTime?
+  expectedClose DateTime?
+  stageHistory Json        @default("[]") // [{ stageId, stageName, movedAt }]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  pipeline     Pipeline      @relation(fields: [pipelineId], references: [id])
+  stage        PipelineStage @relation(fields: [stageId], references: [id])
+
+  @@index([pipelineId])
+  @@index([stageId])
+  @@index([orgId])
+  @@map("deals")
 }

@@ -17,6 +17,7 @@ import {
   User,
   CreditCard,
   LogOut,
+  Kanban,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -44,6 +45,7 @@ const iconMap: Record<string, React.ElementType> = {
   Clock,
   User,
   CreditCard,
+  Kanban,
 };
 
 interface SidebarNavProps {

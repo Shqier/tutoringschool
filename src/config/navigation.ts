@@ -30,6 +30,7 @@ export const sidebarNavItems: NavItem[] = [
   { id: 'teacher-availability', label: 'Availability', href: '/teacher-availability', icon: 'Clock' },
   { id: 'students', label: 'Students', href: '/students', icon: 'GraduationCap' },
   { id: 'payments', label: 'Payments', href: '/payments', icon: 'CreditCard' },
+  { id: 'deals', label: 'Deals', href: '/deals', icon: 'Kanban' },
   { id: 'rooms', label: 'Rooms', href: '/rooms', icon: 'DoorOpen' },
   { id: 'approvals', label: 'Approvals', href: '/approvals', icon: 'ClipboardCheck' },
 ];
