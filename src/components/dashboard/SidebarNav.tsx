@@ -62,6 +62,20 @@ export function SidebarNav({ isOpen = false, onClose }: SidebarNavProps) {
   const router = useRouter();
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [orgName, setOrgName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch('/api/org', {
+      headers: {
+        'x-user-role': 'admin',
+        'x-user-id': 'user_001',
+        'x-org-id': 'org_busala_default',
+      },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.name) setOrgName(data.name); })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -89,6 +103,14 @@ export function SidebarNav({ isOpen = false, onClose }: SidebarNavProps) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}
     >
+      {/* Org Name */}
+      {orgName && (
+        <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl bg-busala-hover-bg/60">
+          <Building2 className="h-4 w-4 text-busala-gold shrink-0" />
+          <span className="text-xs font-semibold text-busala-text-primary truncate">{orgName}</span>
+        </div>
+      )}
+
       {/* Main Navigation */}
       <nav className="flex-1 space-y-1">
         {sidebarNavItems.map((item: NavItem) => {

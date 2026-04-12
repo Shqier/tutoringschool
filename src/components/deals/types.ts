@@ -64,3 +64,18 @@ export interface UpdateDealInput {
   notes?: string | null;
   expectedClose?: string | null;
 }
+
+export interface PipelineAnalytics {
+  totalDeals: number;
+  totalValue: number;
+  avgDealSize: number;
+  winRate: number;
+  byStage: Array<{
+    stageId: string;
+    stageName: string;
+    color: string;
+    dealCount: number;
+    totalValue: number;
+    avgTimeInStage: number;
+  }>;
+}

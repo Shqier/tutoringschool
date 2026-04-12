@@ -39,5 +39,6 @@ export const sidebarNavItems: NavItem[] = [
 
 export const sidebarBottomItems: NavItem[] = [
   { id: 'profile', label: 'My Profile', href: '/profile', icon: 'User' },
+  { id: 'team', label: 'Team', href: '/settings/team', icon: 'Users' },
   { id: 'settings', label: 'Settings', href: '/settings', icon: 'Settings' },
 ];

@@ -2,7 +2,7 @@
 // DEAL MANAGEMENT API CLIENT
 // ============================================
 
-import type { Pipeline, Deal, CreateDealInput, UpdateDealInput } from './types';
+import type { Pipeline, Deal, CreateDealInput, UpdateDealInput, PipelineAnalytics } from './types';
 
 const API_BASE = '/api';
 
@@ -67,4 +67,10 @@ export async function updateDeal(id: string, input: UpdateDealInput): Promise<De
 
 export async function deleteDeal(id: string): Promise<void> {
   await request(`/deals/${id}`, { method: 'DELETE' });
+}
+
+// ---- Analytics ----
+
+export async function getPipelineAnalytics(pipelineId: string): Promise<PipelineAnalytics> {
+  return request<PipelineAnalytics>(`/pipelines/${pipelineId}/analytics`);
 }

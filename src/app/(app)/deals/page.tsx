@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/app';
 import { KanbanBoard } from '@/components/deals/KanbanBoard';
 import { DealDrawer } from '@/components/deals/DealDrawer';
+import { PipelineAnalytics } from '@/components/deals/PipelineAnalytics';
 import { getPipelines, getDeals, createPipeline } from '@/components/deals/api';
 import type { Pipeline, Deal } from '@/components/deals/types';
 
@@ -172,6 +173,10 @@ export default function DealsPage() {
             Retry
           </Button>
         </div>
+      )}
+
+      {activePipeline && (
+        <PipelineAnalytics pipelineId={activePipeline.id} />
       )}
 
       {activePipeline && (
