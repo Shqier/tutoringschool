@@ -74,10 +74,27 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const updates: { name?: string; email?: string; phone?: string | null; avatarUrl?: string | null } = {};
-    if (body.name !== undefined) updates.name = updateMeSchema.name(body.name) ?? body.name;
-    if (body.email !== undefined) updates.email = updateMeSchema.email(body.email) ?? body.email;
-    if (body.phone !== undefined) updates.phone = body.phone === '' ? null : updateMeSchema.phone(body.phone);
-    if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl === '' ? null : updateMeSchema.avatarUrl(body.avatarUrl);
+
+    if (body.name !== undefined) {
+      const name = updateMeSchema.name(body.name);
+      if (name === undefined) return errorResponse('VALIDATION_ERROR', 'name must be a non-empty string', 400);
+      updates.name = name;
+    }
+    if (body.email !== undefined) {
+      const email = updateMeSchema.email(body.email);
+      if (email === undefined) return errorResponse('VALIDATION_ERROR', 'email must be a valid email address', 400);
+      updates.email = email;
+    }
+    if (body.phone !== undefined) {
+      const phone = body.phone === '' ? null : updateMeSchema.phone(body.phone);
+      if (phone === undefined) return errorResponse('VALIDATION_ERROR', 'phone must be a string or null', 400);
+      updates.phone = phone;
+    }
+    if (body.avatarUrl !== undefined) {
+      const avatarUrl = body.avatarUrl === '' ? null : updateMeSchema.avatarUrl(body.avatarUrl);
+      if (avatarUrl === undefined) return errorResponse('VALIDATION_ERROR', 'avatarUrl must be a string or null', 400);
+      updates.avatarUrl = avatarUrl;
+    }
 
     const dbUser = await prisma.user.findFirst({
       where: { id: headerUser.id, orgId: headerUser.orgId },

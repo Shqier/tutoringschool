@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import type { ZodError } from 'zod';
 import type { ApiError, PaginatedResponse, UserRole } from './db/types';
+import { getUserFromCookieHeader } from './auth';
 
 /**
  * Create a JSON response with proper headers
@@ -119,22 +120,37 @@ export function hasMinimumRole(userRole: UserRole, minimumRole: UserRole): boole
 }
 
 /**
- * Get user role from request headers (placeholder for real auth)
- * In production, this would validate a JWT or session
+ * Get authenticated user from request.
+ * Priority:
+ *   1. x-user-role/id/orgId headers (dev/proxy/internal)
+ *   2. session-token cookie (browser requests)
+ *   3. Dev fallback defaults (development only)
  */
 export function getUserFromRequest(request: Request): {
   id: string;
   role: UserRole;
   orgId: string;
 } {
-  // For development, use headers or defaults
   const roleHeader = request.headers.get('x-user-role') as UserRole | null;
   const userIdHeader = request.headers.get('x-user-id');
   const orgIdHeader = request.headers.get('x-org-id');
 
+  // Header-based auth (dev or internal/proxy requests with all three headers)
+  if (roleHeader && userIdHeader && orgIdHeader) {
+    return { id: userIdHeader, role: roleHeader, orgId: orgIdHeader };
+  }
+
+  // Cookie-based auth (browser sessions)
+  const cookieHeader = request.headers.get('cookie');
+  const sessionUser = getUserFromCookieHeader(cookieHeader);
+  if (sessionUser) {
+    return { id: sessionUser.id, role: sessionUser.role as UserRole, orgId: sessionUser.orgId };
+  }
+
+  // Dev fallback (allows header-less access in development)
   return {
     id: userIdHeader || 'user_default',
-    role: roleHeader || 'admin', // Default to admin for development
+    role: roleHeader || 'admin',
     orgId: orgIdHeader || 'org_busala_default',
   };
 }
