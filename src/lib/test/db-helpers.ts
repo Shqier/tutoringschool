@@ -24,6 +24,8 @@ export async function cleanDatabase(): Promise<void> {
     await prisma.teacher.deleteMany({});
     await prisma.paymentPlan.deleteMany({});
     await prisma.user.deleteMany({});
+    await prisma.teamMember.deleteMany({});
+    await prisma.organization.deleteMany({});
   } catch (error) {
     console.error('Error cleaning database:', error);
     throw error;

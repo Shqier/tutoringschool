@@ -651,3 +651,33 @@ enum ActivityType {
   email
   meeting
 }
+
+// ============================================
+// ORGANIZATION MODEL
+// ============================================
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+// ============================================
+// TEAM MEMBER MODEL
+// ============================================
+model TeamMember {
+  id          String   @id @default(uuid())
+  userId      String?
+  orgId       String
+  role        String   // admin | manager | user
+  inviteEmail String?
+  status      String   @default("active") // active | pending
+  createdAt   DateTime @default(now())
+
+  @@index([orgId])
+  @@map("team_members")
+}
