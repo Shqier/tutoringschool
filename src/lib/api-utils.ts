@@ -147,7 +147,11 @@ export function getUserFromRequest(request: Request): {
     return { id: sessionUser.id, role: sessionUser.role as UserRole, orgId: sessionUser.orgId };
   }
 
-  // Dev fallback (allows header-less access in development)
+  // Dev fallback (allows header-less access in development only)
+  if (process.env.NODE_ENV === 'production') {
+    return { id: 'unauthenticated', role: 'staff' as UserRole, orgId: '' };
+  }
+
   return {
     id: userIdHeader || 'user_default',
     role: roleHeader || 'admin',
@@ -164,6 +168,16 @@ export function requireRole(request: Request, minimumRole: UserRole): {
   errorResponse?: NextResponse;
 } {
   const user = getUserFromRequest(request);
+
+  // In production, an empty orgId means the request is unauthenticated
+  if (!user.orgId) {
+    return {
+      authorized: false,
+      user,
+      errorResponse: errorResponse('UNAUTHORIZED', 'Authentication required', 401),
+    };
+  }
+
   const authorized = hasMinimumRole(user.role, minimumRole);
 
   if (!authorized) {
