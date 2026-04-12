@@ -15,6 +15,8 @@ import {
   Calendar,
   Clock,
   User,
+  UserRound,
+  Building2,
   CreditCard,
   LogOut,
   Kanban,
@@ -44,6 +46,8 @@ const iconMap: Record<string, React.ElementType> = {
   Calendar,
   Clock,
   User,
+  UserRound,
+  Building2,
   CreditCard,
   Kanban,
 };
